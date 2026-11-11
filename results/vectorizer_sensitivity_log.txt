@@ -1,0 +1,4 @@
+MultinomialNB done
+KNN done
+DecisionTree done
+DONE

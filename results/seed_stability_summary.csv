@@ -1,0 +1,6 @@
+,accuracy,accuracy,precision,precision,recall,recall,f1,f1,roc_auc,roc_auc
+,mean,std,mean,std,mean,std,mean,std,mean,std
+model,,,,,,,,,,
+DecisionTree,0.9778,0.004,0.9611,0.0214,0.8595,0.0257,0.9073,0.0175,0.945,0.0146
+KNN,0.9838,0.0032,0.9662,0.0129,0.9038,0.0368,0.9335,0.0147,0.9809,0.0045
+MultinomialNB,0.9865,0.005,0.947,0.028,0.9466,0.0179,0.9467,0.0195,0.9879,0.0053
