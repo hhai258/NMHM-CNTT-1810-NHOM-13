@@ -117,3 +117,48 @@ if text.strip():
             st.caption("Chọn Multinomial Naive Bayes ở thanh bên để xem từng từ ảnh hưởng thế nào.")
 else:
     st.info("Hãy nhập một tin nhắn để phân loại.")
+
+# =====================================================================
+# MINH CHỨNG BÁO CÁO: BẢNG 5.4 (TOP LOG-ODDS MULTINOMIAL NAIVE BAYES)
+# =====================================================================
+st.divider()
+with st.expander("📊 Minh chứng Báo cáo: Bảng 5.4 – Top từ vựng theo Log-Odds (Multinomial Naive Bayes)", expanded=True):
+    st.markdown("""
+    **Bảng 5.4 trong Báo cáo:** Tỷ số Log-Odds được trích xuất trực tiếp từ mô hình tối ưu **Multinomial Naive Bayes** ($\\\\alpha=2.0$, tiền xử lý P2, BoW unigram):
+    $$\\text{Log-Odds}(w) = \\ln P(w \\mid \\text{spam}) - \\ln P(w \\mid \\text{ham}) = \\text{feature\\_log\\_prob\\_}[1] - \\text{feature\\_log\\_prob\\_}[0]$$
+    *Từ có Log-Odds càng dương thì càng đặc trưng cho tin nhắn rác (Spam). Từ có Log-Odds càng âm thì càng đặc trưng cho tin nhắn hợp lệ (Ham).*
+    """)
+    nb_pipe = models["MultinomialNB"]
+    vec_nb, clf_nb = nb_pipe.named_steps["vec"], nb_pipe.named_steps["clf"]
+    lo_all = clf_nb.feature_log_prob_[1] - clf_nb.feature_log_prob_[0]
+    names_all = vec_nb.get_feature_names_out()
+
+    top_n = st.slider("Số lượng từ vựng hiển thị:", min_value=5, max_value=30, value=15, step=5)
+    
+    top_spam_idx = np.argsort(lo_all)[::-1][:top_n]
+    top_ham_idx = np.argsort(lo_all)[:top_n]
+
+    df_spam = pd.DataFrame({
+        "Thứ hạng": range(1, top_n + 1),
+        "Từ vựng (Spam)": names_all[top_spam_idx],
+        "Log-Odds": lo_all[top_spam_idx].round(2),
+        "Xu hướng": ["Đẩy mạnh về SPAM" for _ in range(top_n)]
+    })
+    
+    df_ham = pd.DataFrame({
+        "Thứ hạng": range(1, top_n + 1),
+        "Từ vựng (Ham)": names_all[top_ham_idx],
+        "Log-Odds": lo_all[top_ham_idx].round(2),
+        "Xu hướng": ["Đẩy mạnh về HAM" for _ in range(top_n)]
+    })
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader(f"🔴 Top {top_n} từ nghiêng về SPAM")
+        st.dataframe(df_spam, use_container_width=True, hide_index=True)
+    with col2:
+        st.subheader(f"🟢 Top {top_n} từ nghiêng về HAM")
+        st.dataframe(df_ham, use_container_width=True, hide_index=True)
+
+    st.info("💡 **Ghi chú bảo vệ:** Token `longnumtoken` đại diện cho chuỗi số điện thoại $\\\\ge 5$ chữ số (đặc trưng mạnh nhất của Spam); hai token `gt`, `lt` là tàn dư từ thẻ ẩn danh HTML `&lt;#&gt;` trong dữ liệu gốc UCI (được nhóm phát hiện và phân tích sâu trong Chương 5 của Báo cáo).")
+

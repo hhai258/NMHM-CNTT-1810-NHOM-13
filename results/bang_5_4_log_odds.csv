@@ -1,0 +1,16 @@
+﻿Thu_hang,Tu_vung_SPAM,Log_Odds_SPAM,Tu_vung_HAM,Log_Odds_HAM
+1,longnumtoken,5.14,gt,-4.12
+2,claim,4.2,lt,-4.11
+3,prize,4.1,lor,-3.64
+4,nokia,3.72,home,-3.17
+5,tone,3.5,come,-3.15
+6,guaranteed,3.39,later,-3.13
+7,ppm,3.36,da,-3.1
+8,cs,3.26,ok,-2.98
+9,awarded,3.15,really,-2.97
+10,ringtone,3.11,going,-2.96
+11,pobox,2.98,doing,-2.96
+12,attempt,2.98,say,-2.93
+13,tones,2.94,ask,-2.91
+14,entry,2.94,lol,-2.88
+15,landline,2.94,cos,-2.88
