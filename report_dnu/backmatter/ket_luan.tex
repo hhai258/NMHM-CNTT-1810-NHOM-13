@@ -1,0 +1,19 @@
+\UnnumberedChapter{KẾT LUẬN}
+
+Quá trình triển khai và hoàn thiện Bài tập lớn học phần \textbf{Nhập môn Học máy (mã học phần: FIT4013)} với Đề tài 3: \textit{“Phân loại tin nhắn rác (SMS Spam Collection) --- Nghiên cứu so sánh các thuật toán Multinomial Naive Bayes, K-NN và Cây quyết định”} đã mang lại cho tập thể Nhóm 13 những trải nghiệm học tập và nghiên cứu khoa học vô cùng quý giá, sâu sắc và toàn diện.
+
+Vượt lên trên khuôn khổ của việc sao chép một đoạn mã nguồn mẫu hay thực thi một cuốn sổ tay Jupyter đơn lẻ, nhóm đã xây dựng thành công một quy trình phân tích dữ liệu và học máy khép kín, chuẩn mực và có tính tái lập tuyệt đối. Từ 5.574 tin nhắn thô ban đầu, nhóm đã khám phá và phân tích sâu sắc các đặc trưng hình thái, cấu trúc và phân phối xác suất; nhận diện và xử lý triệt để 403 bản ghi trùng lặp nhằm xóa bỏ hoàn toàn rủi ro rò rỉ dữ liệu; sáng tạo kỹ thuật tiền xử lý bảo toàn tín hiệu thông qua các token đại diện chuyên biệt; thiết kế không gian thực nghiệm đa chiều gồm 36 cấu hình dữ liệu và đóng gói khép kín trong \texttt{sklearn.pipeline.Pipeline}.
+
+Kết quả thực nghiệm đã đem lại những phát hiện có giá trị phương pháp luận sâu sắc:
+\begin{enumerate}
+    \item Khẳng định mô hình \textbf{Multinomial Naive Bayes} ($\alpha=2.0$, tiền xử lý P2, biểu diễn BoW unigram) là giải pháp tối ưu toàn diện nhất cho bài toán phân loại tin nhắn rác SMS, đạt F1-score kiểm thử lên tới \textbf{$0,9653$}, Recall \textbf{$95,42\%$}, Accuracy \textbf{$99,13\%$}, tốc độ dự đoán vượt trội $27.900$ tin nhắn/giây và duy trì độ ổn định cao nhất qua 5 seed ngẫu nhiên ($F_1 = 0,9467 \pm 0,0195$).
+    \item Làm sáng tỏ hiện tượng suy giảm hiệu năng của TF-IDF trên Naive Bayes ở tham số mặc định $\alpha=1.0$, chứng minh rằng khi được tinh chỉnh siêu tham số phù hợp theo từng ô cấu hình, TF-IDF và BoW mang lại hiệu năng tương đương nhau.
+    \item Chứng minh bản chất thất bại của khoảng cách Euclid trên thuật toán K-NN khi áp dụng cho dữ liệu văn bản thưa, và chứng minh bước nhảy vọt của K-NN khi kết hợp vector hóa TF-IDF với khoảng cách Cosine (F1 tăng từ $0,4217$ lên $0,9291$, đạt ROC-AUC cao nhất toàn hệ thống $0,9919$).
+    \item Xác nhận tính chất đặc thù của Cây quyết định với khả năng diễn giải luật tường minh và đạt chỉ số Precision tuyệt đối $100\%$ nhờ sự chi phối của đặc trưng chuỗi số dài \texttt{longnumtoken} (chiếm $74,6\%$ tầm quan trọng của cây).
+    \item Mổ xẻ chi tiết 9 ca dự đoán sai của Naive Bayes (3 FP và 6 FN), nhận diện các điểm mù của mô hình trước các tin nhắn ngắn mang tính thương mại hoặc tin nhắn spam thiếu vắng tín hiệu cấu trúc, đồng thời phát hiện cạm bẫy dữ liệu HTML \texttt{lt}/\texttt{gt} sinh ra từ quá trình ẩn danh hóa số điện thoại.
+    \item Hiện thực hóa trọn vẹn sản phẩm ứng dụng web tương tác thời gian thực bằng Streamlit và công cụ dòng lệnh CLI, tích hợp bộ 8 kịch bản kiểm thử mẫu và cơ chế giải thích quyết định dựa trên đóng góp log-odds của từng từ vựng.
+\end{enumerate}
+
+Bên cạnh những kết quả học thuật và kỹ thuật đã đạt được, bài tập lớn đã giúp từng thành viên trong nhóm rèn luyện và trưởng thành vượt bậc về các kỹ năng cốt lõi: tư duy phân tích dữ liệu phản biện, kỹ năng lập trình hướng pipeline tái lập, kỹ năng thiết kế thực nghiệm có đối chứng, kỹ năng làm việc nhóm và phối hợp quản lý mã nguồn bằng GitHub, cũng như kỹ năng biên soạn báo cáo khoa học chuẩn mực bằng hệ thống soạn thảo chuyên nghiệp \LaTeX.
+
+Nhóm xin chân thành cảm ơn sự hướng dẫn tận tình, tâm huyết của giảng viên ThS. Lê Thị Thùy Trang. Những kiến thức và phương pháp luận tiếp thu được từ học phần này chắc chắn sẽ là bệ phóng vững chắc cho các công trình nghiên cứu chuyên sâu, đồ án tốt nghiệp và sự nghiệp kỹ sư công nghệ thông tin tương lai của mỗi thành viên trong nhóm.

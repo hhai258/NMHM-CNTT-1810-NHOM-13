@@ -1,0 +1,184 @@
+\appendix
+\UnnumberedChapter{PHỤ LỤC}
+
+\section*{Phụ lục A. Báo cáo khai báo sử dụng công cụ Trí tuệ Nhân tạo (AI)}
+\addcontentsline{toc}{section}{Phụ lục A. Báo cáo khai báo sử dụng công cụ Trí tuệ Nhân tạo (AI)}
+
+Căn cứ theo quy định tại Mục 2.3 và Tiêu chí Liêm chính học thuật trong Rubric đánh giá bài tập lớn tại Mục 2.5 của tài liệu \textit{“Hướng dẫn thực hiện bài tập lớn học phần Nhập môn Học máy (FIT4013) --- ThS. Lê Thị Thùy Trang”}, tập thể Nhóm 13 xin khai báo công khai, minh bạch toàn bộ quá trình sử dụng các công cụ Trí tuệ nhân tạo (AI) trong quá trình triển khai đề tài như sau:
+
+\subsection*{1. Các công cụ AI đã sử dụng}
+\begin{itemize}
+    \item \textbf{Claude 3.5 Sonnet / Claude 3.7 Sonnet (Anthropic):} Sử dụng thông qua giao diện hội thoại lập trình và trợ lý mã nguồn.
+    \item \textbf{Antigravity / Gemini Pro (Google DeepMind):} Sử dụng hỗ trợ tra cứu tài liệu học thuật, gợi ý cấu trúc báo cáo khoa học và rà soát cú pháp \LaTeX.
+\end{itemize}
+
+\subsection*{2. Các nội dung và nhiệm vụ được AI hỗ trợ}
+\begin{enumerate}
+    \item \textbf{Khảo sát và đối chiếu yêu cầu môn học:} Hỗ trợ đọc hiểu tài liệu hướng dẫn bài tập lớn và toàn bộ 6 bài giảng của học phần FIT4013, từ đó đề xuất thiết kế quy trình thực nghiệm tuân thủ chặt chẽ yêu cầu của Đề tài 3.
+    \item \textbf{Gợi ý kiến trúc đường ống học máy (Pipeline):} Đề xuất cấu trúc mã nguồn hướng module hóa trong thư mục \texttt{src/}, tư vấn việc đóng gói vectorizer và mô hình bên trong \texttt{sklearn.pipeline.Pipeline} để ngăn ngừa rò rỉ dữ liệu (Data Leakage).
+    \item \textbf{Phát hiện và tháo gỡ lỗi kỹ thuật trong dữ liệu:}
+    \begin{itemize}
+        \item Phát hiện lỗi phân tách dòng trong tệp \texttt{SMSSpamCollection} do chứa ký tự dấu nháy kép (\texttt{"}) và ký hiệu tiền tệ Anh (£) làm mất một số dòng khi đọc bằng cấu hình mặc định của \texttt{pandas}; gợi ý giải pháp sử dụng tham số \texttt{quoting=csv.QUOTE\_NONE}.
+        \item Cảnh báo rủi ro rò rỉ dữ liệu của 403 tin nhắn trùng lặp, đề xuất phương án loại bỏ trùng lặp trước khi phân chia train/test.
+        \item Phát hiện cạm bẫy phương pháp luận: chỉ ra việc so sánh biểu diễn BoW và TF-IDF với siêu tham số mặc định $\alpha=1.0$ là không công bằng đối với Naive Bayes, gợi ý chuyển đổi sang quy trình tinh chỉnh siêu tham số theo từng ô cấu hình ở Giai đoạn 2.
+    \end{itemize}
+    \item \textbf{Hỗ trợ rà soát cú pháp \LaTeX:} Chuyển đổi các bảng kết quả định lượng từ định dạng CSV sang bảng mã nguồn \LaTeX\ chuẩn mực, hỗ trợ căn chỉnh lề, định dạng tiêu đề và kiểm tra liên kết chéo.
+\end{enumerate}
+
+\subsection*{3. Phần công việc nhóm tự thực hiện, kiểm chứng và chịu trách nhiệm}
+\begin{itemize}
+    \item Nhóm trực tiếp cài đặt môi trường, chạy toàn bộ các kịch bản thực nghiệm trên máy tính cá nhân, kiểm chứng từng con số trong các tệp CSV và JSON sinh ra từ mã nguồn.
+    \item Nhóm tự tay kiểm tra từng tin nhắn dự đoán sai trong tập phân tích lỗi, đối chiếu nguyên nhân ngôn ngữ học và xác thực tính đúng đắn của các giải thích.
+    \item Nhóm kiểm tra, chạy thử và hoàn thiện toàn bộ giao diện ứng dụng web Streamlit và kịch bản demo 8 tin mẫu.
+    \item \textbf{Cam kết liêm chính học thuật:} Toàn bộ các thành viên trong nhóm hiểu rõ bản chất toán học, cấu trúc mã nguồn, quy trình đường ống và kết quả thực nghiệm của đề tài; sẵn sàng thuyết minh, phản biện và trả lời độc lập mọi câu hỏi chuyên môn của Hội đồng chấm thi khi bảo vệ bài tập lớn.
+\end{itemize}
+
+\clearpage
+
+\section*{Phụ lục B. Bảng phân công nhiệm vụ và minh chứng đóng góp nhóm}
+\addcontentsline{toc}{section}{Phụ lục B. Bảng phân công nhiệm vụ và minh chứng đóng góp nhóm}
+
+Nhóm 13 gồm 02 thành viên thuộc lớp CNTT 18-10, Khoa Công nghệ Thông tin, Trường Đại học Đại Nam. Quá trình làm việc nhóm được điều phối thông qua kho lưu trữ mã nguồn GitHub tại địa chỉ: \url{https://github.com/hhai258/NMHM-CNTT-1810-NHOM-13}.
+
+Bảng~\ref{tab:phan-cong-nhiem-vu} tổng hợp chi tiết phần việc phụ trách, nhiệm vụ kỹ thuật và tỷ lệ đóng góp của từng thành viên:
+
+\begin{table}[H]
+\centering
+\caption{Bảng phân công nhiệm vụ và tỷ lệ hoàn thành công việc của Nhóm 13}
+\label{tab:phan-cong-nhiem-vu}
+\begin{tabular}{|c|p{4cm}|c|p{6.5cm}|c|}
+\hline
+\textbf{STT} & \textbf{Họ và tên thành viên} & \textbf{Mã sinh viên} & \textbf{Nhiệm vụ chính phụ trách} & \textbf{Tỷ lệ đóng góp} \\
+\hline
+\textbf{1} & \textbf{Nguyễn Hoàng Hải} (Trưởng nhóm) & 1871020211 &
+\begin{itemize}[leftmargin=*, nosep]
+    \item Khám phá và phân tích dữ liệu (EDA).
+    \item Xây dựng module tiền xử lý dữ liệu và hàm chuẩn hóa regex \texttt{normalize\_text}.
+    \item Thiết kế cấu trúc \texttt{Pipeline} và thực nghiệm Giai đoạn 1 (36 cấu hình).
+    \item Thực nghiệm tối ưu hóa siêu tham số GridSearchCV (Giai đoạn 2).
+    \item Viết báo cáo các Chương 1, 2, 3 và Phụ lục A, C.
+\end{itemize}
+& \textbf{50\%} \\
+\hline
+\textbf{2} & \textbf{Nguyễn Thành Đạt} & 1871020135 &
+\begin{itemize}[leftmargin=*, nosep]
+    \item Thực nghiệm mở rộng độ nhạy tham số làm trơn $\alpha$ cho Naive Bayes.
+    \item Thực nghiệm có kiểm soát về tham số Vectorizer (\texttt{vectorizer\_sensitivity.py}).
+    \item Đánh giá trên tập test, ma trận nhầm lẫn và kiểm tra độ ổn định 5-seed.
+    \item Phân tích lỗi chi tiết (FP, FN) và trích xuất độ quan trọng Log-Odds.
+    \item Phát triển ứng dụng web demo Streamlit và viết Chương 4, 5, 6.
+\end{itemize}
+& \textbf{50\%} \\
+\hline
+\end{tabular}
+\Nguon{Nhóm 13 thống nhất và lập biên bản phân công}
+\end{table}
+
+\clearpage
+
+\section*{Phụ lục C. Hướng dẫn cài đặt môi trường và tái lập thực nghiệm}
+\addcontentsline{toc}{section}{Phụ lục C. Hướng dẫn cài đặt môi trường và tái lập thực nghiệm}
+
+Để tái lập toàn bộ quy trình nghiên cứu từ dữ liệu thô đến kết quả cuối cùng, người dùng có thể thực hiện theo các bước tuần tự dưới đây trên môi trường dòng lệnh (Command Prompt hoặc PowerShell):
+
+\subsection*{1. Tải mã nguồn từ GitHub và khởi tạo môi trường ảo}
+\begin{lstlisting}[language=bash]
+# 1. Clone repository ve may cuc bo
+git clone https://github.com/hhai258/NMHM-CNTT-1810-NHOM-13.git
+cd NMHM-CNTT-1810-NHOM-13
+
+# 2. Tao va kich hoat moi truong ao Python
+python -m venv .venv
+# Tren Windows:
+.venv\Scripts\activate
+# Tren Linux / macOS:
+source .venv/bin/activate
+
+# 3. Cai dat cac thu vien khoa hoc du lieu
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection*{2. Chạy tái lập toàn bộ chuỗi thực nghiệm}
+\begin{lstlisting}[language=bash]
+# 1. Chay thuc nghiem chinh (EDA -> GridSearch -> Test -> Error Analysis)
+# Thoi gian chay: khoang 8 - 10 phut tren CPU 1 loi
+python src/run_experiments.py
+
+# 2. (Tuy chon) Chay kiem tra do nhay he so alpha mo rong
+python src/extra_nb_alpha_check.py
+
+# 3. (Tuy chon) Chay thuc nghiem do nhay cac tham so Vectorizer
+python src/vectorizer_sensitivity.py
+\end{lstlisting}
+
+\subsection*{3. Chạy thử nghiệm phân loại nhanh qua giao diện dòng lệnh (CLI)}
+\begin{lstlisting}[language=bash]
+# Du doan mot chuoi tin nhan cu the:
+python src/predict.py "WINNER!! Call 09061701461 to claim your prize"
+
+# Hoac chay o che do nhap lieu tuong tac truc tiep:
+python src/predict.py
+\end{lstlisting}
+
+\subsection*{4. Khởi chạy ứng dụng giao diện web demo Streamlit}
+\begin{lstlisting}[language=bash]
+# 1. Cai dat goi streamlit (neu chua co)
+pip install -r requirements-demo.txt
+
+# 2. Khoi dong ung dung web
+streamlit run src/demo_app.py
+\end{lstlisting}
+Trình duyệt web sẽ tự động mở trang tương tác tại địa chỉ: \url{http://localhost:8501}.
+
+\clearpage
+
+\section*{Phụ lục D. Trích đoạn mã nguồn các hàm xử lý cốt lõi}
+\addcontentsline{toc}{section}{Phụ lục D. Trích đoạn mã nguồn các hàm xử lý cốt lõi}
+
+\subsection*{1. Hàm chuẩn hóa văn bản bảo toàn tín hiệu (\texttt{src/common.py})}
+\begin{lstlisting}[language=Python]
+def normalize_text(s: str) -> str:
+    """Chuan hoa giu tin hieu: thay the URL, so dai, tien te bang token dac biet."""
+    s = s.lower()
+    s = URL_RE.sub(" urltoken ", s)
+    s = CURR_RE.sub(" currtoken ", s)
+    s = LONGNUM_RE.sub(" longnumtoken ", s)
+    s = NUM_RE.sub(" numtoken ", s)
+    s = re.sub(r"[^a-z\s]", " ", s)           # Loai bo dau cau con lai
+    return re.sub(r"\s+", " ", s).strip()
+\end{lstlisting}
+
+\subsection*{2. Hàm khởi tạo Vectorizer và đóng gói Pipeline (\texttt{src/common.py})}
+\begin{lstlisting}[language=Python]
+def make_vectorizer(prep_name, rep_name):
+    p, r = PREPROCESS[prep_name], REPRESENT[rep_name]
+    cls = CountVectorizer if r["kind"] == "bow" else TfidfVectorizer
+    kw = dict(lowercase=True, ngram_range=r["ngram_range"], min_df=r["min_df"],
+              stop_words=p["stop_words"])
+    if p["preprocessor"] is not None:
+        kw["preprocessor"] = p["preprocessor"]
+    return cls(**kw)
+
+def make_pipeline(model_name, prep_name, rep_name, model=None, memory=None):
+    """Vectorizer nam TRONG pipeline => chi fit tren tap huan luyen
+    (va tren tung fold khi cross-validation) -> tranh data leakage."""
+    return Pipeline([("vec", make_vectorizer(prep_name, rep_name)),
+                     ("clf", model if model is not None else make_model(model_name))],
+                    memory=memory)
+\end{lstlisting}
+
+\subsection*{3. Trích đoạn tính toán đóng góp Log-Odds trong Demo App (\texttt{src/demo\_app.py})}
+\begin{lstlisting}[language=Python]
+if model_key == "MultinomialNB":
+    vec, clf = pipe.named_steps["vec"], pipe.named_steps["clf"]
+    X = vec.transform([text])
+    idx = X.nonzero()[1]
+    if len(idx):
+        names = vec.get_feature_names_out()
+        lo = clf.feature_log_prob_[1] - clf.feature_log_prob_[0]
+        contrib = np.asarray(X[0, idx].todense()).ravel() * lo[idx]
+        df_c = pd.DataFrame({"Tu vung": names[idx], "Dong gop (log-odds)": contrib.round(2)})
+        df_c = df_c.sort_values("Dong gop (log-odds)", ascending=False)
+        st.write("Tu day ve **SPAM** (duong) hoac **HAM** (am):")
+        st.dataframe(df_c, hide_index=True)
+\end{lstlisting}

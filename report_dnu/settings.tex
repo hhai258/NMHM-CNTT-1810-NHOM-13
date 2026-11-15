@@ -1,0 +1,325 @@
+% =====================================================
+% settings.tex
+% Cấu hình chung cho báo cáo Bài tập lớn Học máy FIT4013
+% =====================================================
+
+% =========================
+% 1. CẤU HÌNH TIẾNG VIỆT VÀ FONT
+% =========================
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}
+  {\setmainfont{Times New Roman}}
+  {\setmainfont{Tinos}}
+
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+
+% =========================
+% 2. CẤU HÌNH TRANG
+% =========================
+\usepackage[
+    a4paper,
+    left=3.0cm,
+    right=1.5cm,
+    top=2.0cm,
+    bottom=2.0cm
+]{geometry}
+
+\usepackage{setspace}
+\onehalfspacing
+
+% Cỡ chữ mặc định của nội dung là 13pt.
+\makeatletter
+\renewcommand{\normalsize}{%
+    \@setfontsize\normalsize{13pt}{15.6pt}%
+    \abovedisplayskip 13pt plus 3pt minus 7pt%
+    \abovedisplayshortskip 0pt plus 4pt%
+    \belowdisplayshortskip 6.5pt plus 3.5pt minus 3pt%
+    \belowdisplayskip \abovedisplayskip
+    \let\@listi\@listI
+}
+\makeatother
+\normalsize
+
+\usepackage{indentfirst}
+\setlength{\parindent}{1.27cm}
+\setlength{\parskip}{6pt}
+
+% =========================
+% 3. GÓI HỖ TRỢ
+% =========================
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{amsmath, amssymb}
+\usepackage{enumitem}
+\setlist[itemize]{
+    label=-,
+    leftmargin=1.27cm,
+    labelsep=0.5em
+}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds,calc}
+\usepackage{eso-pic}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{listings}
+
+% Cấu hình listings cho mã nguồn Python
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{blue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single,
+    rulecolor=\color{codegray!40}
+}
+\lstset{style=mystyle}
+
+% =========================
+% 4. HYPERLINK
+% =========================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+
+% Số trang đặt giữa phía trên; áp dụng cả cho trang mở đầu chương.
+\setlength{\headheight}{17pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyhead[C]{\thepage}
+    \renewcommand{\headrulewidth}{0pt}
+}
+
+% =========================
+% 5. ĐÁNH SỐ HÌNH, BẢNG THEO CHƯƠNG
+% =========================
+\counterwithin{table}{chapter}
+\counterwithin{figure}{chapter}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+
+% Môi trường riêng cho sơ đồ để đánh số và lập danh mục độc lập.
+\newfloat{sodo}{H}{los}[chapter]
+\floatname{sodo}{Sơ đồ}
+\renewcommand{\thesodo}{\thechapter.\arabic{sodo}}
+\makeatletter
+\newcommand{\l@sodo}[2]{%
+    \begingroup
+    \let\ReportOriginalNumberline\numberline
+    \renewcommand{\numberline}[1]{%
+        \ReportOriginalNumberline{Sơ đồ~##1}}%
+    \@dottedtocline{1}{0pt}{2.8cm}{#1}{#2}%
+    \endgroup
+}
+\makeatother
+
+\captionsetup{
+    font=normalsize,
+    labelfont=normalfont,
+    textfont=normalfont,
+    labelsep=period,
+    justification=centering
+}
+\captionsetup[table]{name=Bảng,position=top}
+\captionsetup[figure]{name=Hình,position=bottom}
+\captionsetup[sodo]{name=Sơ đồ,position=bottom}
+
+\renewcommand{\listtablename}{BẢNG}
+\renewcommand{\listfigurename}{HÌNH, SƠ ĐỒ}
+\renewcommand{\contentsname}{MỤC LỤC}
+\renewcommand{\bibname}{TÀI LIỆU THAM KHẢO}
+
+% =========================
+% 6. ĐỊNH DẠNG TIÊU ĐỀ CHƯƠNG, MỤC
+% =========================
+\titleformat{\chapter}
+  [display]
+  {\centering\bfseries\fontsize{14pt}{16pt}\selectfont}
+  {Chương \thechapter}
+  {0.3cm}
+  {\MakeUppercase}
+
+\titlespacing*{\chapter}{0pt}{0pt}{18pt}
+
+\titleformat{\section}
+  {\bfseries\fontsize{13pt}{15pt}\selectfont}
+  {\thesection}
+  {0.5em}
+  {}
+
+\titleformat{\subsection}
+  {\bfseries\itshape\fontsize{13pt}{15pt}\selectfont}
+  {\thesubsection}
+  {0.5em}
+  {}
+
+\titleformat{\subsubsection}
+  {\itshape\fontsize{13pt}{15pt}\selectfont}
+  {\thesubsubsection}
+  {0.5em}
+  {}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% =========================
+% 7. ĐỊNH DẠNG MỤC LỤC
+% =========================
+\renewcommand{\cftchapfont}{\bfseries\fontsize{12pt}{14pt}\selectfont}
+\renewcommand{\cftchappagefont}{\bfseries\fontsize{12pt}{14pt}\selectfont}
+\renewcommand{\cftchappresnum}{CHƯƠNG~}
+\renewcommand{\cftchapaftersnum}{.}
+\setlength{\cftchapnumwidth}{2.5cm}
+\renewcommand{\cftsecfont}{\bfseries\fontsize{12pt}{14pt}\selectfont}
+\renewcommand{\cftsecpagefont}{\bfseries\fontsize{12pt}{14pt}\selectfont}
+\renewcommand{\cftsecaftersnum}{.}
+\renewcommand{\cftsubsecfont}{\itshape\fontsize{12pt}{14pt}\selectfont}
+\renewcommand{\cftsubsecpagefont}{\fontsize{12pt}{14pt}\selectfont}
+\renewcommand{\cftsubsecaftersnum}{.}
+\renewcommand{\cftsubsubsecfont}{\fontsize{12pt}{14pt}\selectfont}
+\renewcommand{\cftsubsubsecpagefont}{\fontsize{12pt}{14pt}\selectfont}
+\renewcommand{\cftsubsubsecaftersnum}{.}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforechapskip}{6pt}
+
+\renewcommand{\cfttoctitlefont}{\hfill\bfseries\fontsize{14pt}{16pt}\selectfont}
+\renewcommand{\cftaftertoctitle}{\hfill}
+\setlength{\cftbeforetoctitleskip}{0pt}
+\setlength{\cftaftertoctitleskip}{18pt}
+
+\makeatletter
+\newcommand{\ReportListTable}[4]{%
+    {\bfseries\fontsize{13pt}{14pt}\selectfont #1:\par}
+    \vspace{6pt}
+    \begingroup
+    \fontsize{12pt}{13pt}\selectfont
+    \renewcommand{\arraystretch}{1.5}
+    \def\ReportListPrefix{#3}%
+    \def\numberline##1{\ReportListPrefix~##1.\enspace}%
+    \def\contentsline##1##2##3##4{##2\dotfill & ##3\\\hline}%
+    \def\addvspace##1{}%
+    \def\select@language##1{}%
+    \makeatletter
+    \noindent
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{\dimexpr\textwidth-3.5cm\relax}|>{\centering\arraybackslash}p{2.6cm}|}
+        \hline
+        \multicolumn{1}{|c|}{\bfseries #2} & \bfseries Trang \\
+        \hline
+        \@input{\jobname.#4}%
+    \end{tabular}
+    \par
+    \let\contentsline\@gobblefour
+    \let\addvspace\@gobble
+    \let\select@language\@gobble
+    \@starttoc{#4}%
+    \makeatother
+    \endgroup
+}
+
+\newcommand{\CombinedLists}{%
+    \chapter*{\fontsize{13pt}{14pt}\selectfont DANH MỤC CÁC BẢNG, SƠ ĐỒ, HÌNH}
+    \addcontentsline{toc}{chapter}{DANH MỤC CÁC BẢNG, SƠ ĐỒ, HÌNH}
+    \ReportListTable{BẢNG}{Tên bảng}{Bảng}{lot}
+    \vspace{14pt}
+    \ReportListTable{SƠ ĐỒ}{Tên sơ đồ}{Sơ đồ}{los}
+    \vspace{14pt}
+    \ReportListTable{HÌNH}{Tên hình}{Hình}{lof}
+}
+\makeatother
+
+% =========================
+% 8. THÔNG TIN SINH VIÊN / BÁO CÁO
+% =========================
+\newcommand{\BoGiaoDuc}{BỘ GIÁO DỤC VÀ ĐÀO TẠO}
+\newcommand{\TenTruong}{TRƯỜNG ĐẠI HỌC ĐẠI NAM}
+\newcommand{\Khoa}{KHOA CÔNG NGHỆ THÔNG TIN}
+
+\newcommand{\TenSinhVienMot}{NGUYỄN HOÀNG HẢI}
+\newcommand{\MaSinhVienMot}{1871020211}
+
+\newcommand{\TenSinhVienHai}{NGUYỄN THÀNH ĐẠT}
+\newcommand{\MaSinhVienHai}{1871020135}
+
+\newcommand{\LopHoc}{CNTT 18-10}
+\newcommand{\NhomHocTap}{NHÓM 13}
+\newcommand{\HocPhan}{NHẬP MÔN HỌC MÁY (MÃ HP: FIT4013)}
+
+\newcommand{\TenBaoCao}{BÁO CÁO BÀI TẬP LỚN HỌC PHẦN NHẬP MÔN HỌC MÁY\\[0.3cm]\Large\textbf{ĐỀ TÀI 3: PHÂN LOẠI TIN NHẮN RÁC (SMS SPAM COLLECTION)}\\[0.2cm]\large\textbf{NGHIÊN CỨU SO SÁNH MULTINOMIAL NAIVE BAYES, K-NN VÀ CÂY QUYẾT ĐỊNH}}
+\newcommand{\LoaiBaoCao}{BÁO CÁO BÀI TẬP LỚN}
+\newcommand{\Nganh}{CÔNG NGHỆ THÔNG TIN}
+\newcommand{\ChuyenNganh}{KHOA HỌC DỮ LIỆU VÀ TRÍ TUỆ NHÂN TẠO}
+
+\newcommand{\GiangVienHD}{ThS. Lê Thị Thùy Trang}
+
+\newcommand{\DiaDiem}{HÀ NỘI}
+\newcommand{\Nam}{2026}
+
+\newcommand{\LogoTruong}{images/logo-dai-nam.png}
+
+% =========================
+% 9. LỆNH CHƯƠNG KHÔNG ĐÁNH SỐ
+% =========================
+\newcommand{\UnnumberedChapter}[1]{
+    \chapter*{#1}
+    \addcontentsline{toc}{chapter}{#1}
+}
+
+\newcommand{\Nguon}[1]{%
+    \par\smallskip
+    {\centering\itshape Nguồn: #1\par}
+}
+
+\newcommand{\SodoCaption}[2]{%
+    \caption[#1]{#1\\[3pt]\textit{Nguồn: #2}}%
+}
+
+% =========================
+% 10. KHUNG TRANG BÌA
+% =========================
+\newcommand{\DrawCoverBorder}{
+\AddToShipoutPictureBG*{
+\begin{tikzpicture}[remember picture, overlay]
+    \draw[line width=1.5pt]
+        ([xshift=1.2cm,yshift=-1.2cm]current page.north west)
+        rectangle
+        ([xshift=-1.2cm,yshift=1.2cm]current page.south east);
+    \draw[line width=0.5pt]
+        ([xshift=1.3cm,yshift=-1.3cm]current page.north west)
+        rectangle
+        ([xshift=-1.3cm,yshift=1.3cm]current page.south east);
+\end{tikzpicture}
+}
+}

@@ -1,0 +1,111 @@
+\newcommand{\TabData}{%
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{Thống kê bộ dữ liệu trước và sau khi loại tin nhắn trùng lặp.}\label{tab:data}
+\begin{tabular}{lrrrr}\toprule
+Tập & Tổng & Ham & Spam & Tỉ lệ spam \\\midrule
+Dữ liệu thô & 5574 & 4827 & 747 & 13,4\% \\
+Sau khi bỏ trùng & 5171 & 4518 & 653 & 12,6\% \\
+Train (80\%) & 4136 & 3614 & 522 & 12,6\% \\
+Test (20\%) & 1035 & 904 & 131 & 12,7\% \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\TabSignal}{%
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{Đặc điểm khác biệt giữa ham và spam (sau khi bỏ trùng).}\label{tab:signal}
+\begin{tabular}{lrr}\toprule
+Đặc điểm & Ham & Spam \\\midrule
+Độ dài trung bình (ký tự) & 70,9 & 137,7 \\
+Độ dài trung vị (ký tự) & 53 & 148 \\
+Độ dài lớn nhất (ký tự) & 910 & 223 \\
+Số từ trung bình & 14,2 & 23,7 \\
+Chứa chuỗi $\geq 5$ chữ số & 0,1\% & 76,7\% \\
+Chứa URL/tên miền & 0,3\% & 17,8\% \\
+Chứa ký hiệu tiền tệ & 0,4\% & 33,2\% \\
+Tỉ lệ chữ HOA trung bình & 7,7\% & 16,6\% \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\TabCfg}{%
+\begin{table}[H]\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\caption{Cấu hình được chọn cho từng mô hình (chọn theo F1 của 5-fold CV trên tập train).}\label{tab:cfg}
+\begin{tabular}{lllp{3.4cm}rr}\toprule
+Mô hình & Tiền xử lý & Biểu diễn & Siêu tham số & CV-F1 mặc định & CV-F1 tinh chỉnh \\\midrule
+Multinomial NB & P2\_norm\_stop & BoW\_uni & alpha=2,0, fit\_prior=True & 0,9400 & 0,9518 \\
+K-NN & P1\_normalize & TFIDF\_uni & metric=cosine, n\_neighbors=9, weights=distance & 0,8759 & 0,9176 \\
+Cây quyết định & P2\_norm\_stop & BoW\_uni & criterion=gini, max\_depth=10, min\_samples\_leaf=1 & 0,9072 & 0,9110 \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\TabBaseTuned}{%
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{Kết quả trên tập test: baseline (BoW unigram, không tiền xử lý, tham số mặc định) và cấu hình tinh chỉnh. Spam là lớp dương.}\label{tab:basetuned}
+\begin{tabular}{llrrrr}\toprule
+Mô hình & Phương án & Accuracy & Precision & Recall & F1 \\\midrule
+Multinomial NB & Baseline & 0,9807 & 0,9512 & 0,8931 & 0,9213 \\
+ & Tinh chỉnh & 0,9913 & 0,9766 & 0,9542 & \textbf{0,9653} \\
+K-NN & Baseline & 0,9072 & 1,0000 & 0,2672 & 0,4217 \\
+ & Tinh chỉnh & 0,9826 & 0,9593 & 0,9008 & \textbf{0,9291} \\
+Cây quyết định & Baseline & 0,9691 & 0,9024 & 0,8473 & 0,8740 \\
+ & Tinh chỉnh & 0,9874 & 1,0000 & 0,9008 & \textbf{0,9478} \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\TabFinal}{%
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{Kết quả cuối cùng trên tập test (1035 tin nhắn, 131 spam), một lần chia với random\_state=42.}\label{tab:final}
+\begin{tabular}{lrrrrrr}\toprule
+Mô hình & Accuracy & Precision & Recall & F1 & ROC-AUC & FP / FN \\\midrule
+Multinomial NB & 0,9913 & 0,9766 & 0,9542 & 0,9653 & 0,9860 & 3 / 6 \\
+K-NN & 0,9826 & 0,9593 & 0,9008 & 0,9291 & 0,9919 & 5 / 13 \\
+Cây quyết định & 0,9874 & 1,0000 & 0,9008 & 0,9478 & 0,9500 & 0 / 13 \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\TabSeeds}{%
+\begin{table}[H]\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\caption{Độ ổn định: trung bình $\pm$ độ lệch chuẩn trên 5 lần chia train/test khác nhau (seed 0--4), siêu tham số giữ cố định.}\label{tab:seeds}
+\begin{tabular}{lccccc}\toprule
+Mô hình & Accuracy & Precision & Recall & F1 & ROC-AUC \\\midrule
+Multinomial NB & 0,9865 $\pm$ 0,0050 & 0,9470 $\pm$ 0,0280 & 0,9466 $\pm$ 0,0179 & 0,9467 $\pm$ 0,0195 & 0,9879 $\pm$ 0,0053 \\
+K-NN & 0,9838 $\pm$ 0,0032 & 0,9662 $\pm$ 0,0129 & 0,9038 $\pm$ 0,0368 & 0,9335 $\pm$ 0,0147 & 0,9809 $\pm$ 0,0045 \\
+Cây quyết định & 0,9778 $\pm$ 0,0040 & 0,9611 $\pm$ 0,0214 & 0,8595 $\pm$ 0,0257 & 0,9073 $\pm$ 0,0175 & 0,9450 $\pm$ 0,0146 \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\TabAlpha}{%
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{Độ nhạy của Multinomial NB theo $\alpha$ (CV-F1 trung bình qua 3 cách chia fold; cấu hình P2 + BoW unigram).}\label{tab:alpha}
+\begin{tabular}{rrrr}\toprule
+$\alpha$ & F1 & Precision & Recall \\\midrule
+0,1 & 0,9396 & 0,9314 & 0,9483 \\
+0,5 & 0,9390 & 0,9278 & 0,9508 \\
+1 & 0,9396 & 0,9315 & 0,9483 \\
+2 & 0,9503 & 0,9541 & 0,9470 \\
+3 & 0,9488 & 0,9622 & 0,9361 \\
+5 & 0,9460 & 0,9725 & 0,9214 \\
+10 & 0,9409 & 0,9826 & 0,9029 \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\TabVecGrid}{%
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{F1 CV (5-fold, tập train) theo n-gram và \texttt{min\_df}, các tham số khác giữ nguyên (\texttt{max\_df}=1,0). Với \texttt{max\_df}=0,5 cho kết quả \emph{giống hệt}.}\label{tab:vecgrid}
+\begin{tabular}{llrrrr}\toprule
+Mô hình & Biểu diễn & min\_df=1 & 2 & 3 & 5 \\\midrule
+Multinomial NB & unigram & 0,9518 & 0,9412 & 0,9407 & 0,9357 \\
+ & unigram + bigram & 0,9492 & 0,9443 & 0,9432 & 0,9408 \\
+K-NN & unigram & 0,9176 & 0,9213 & 0,9219 & 0,9188 \\
+ & unigram + bigram & 0,9112 & 0,9130 & 0,9201 & 0,9218 \\
+Cây quyết định & unigram & 0,9110 & 0,9020 & 0,9106 & 0,9125 \\
+ & unigram + bigram & 0,8985 & 0,9034 & 0,8952 & 0,8944 \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\TabVecFeat}{%
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{6pt}
+\caption{F1 CV theo số đặc trưng tối đa (\texttt{max\_features}, unigram); cột cuối là toàn bộ từ vựng (khoảng 6\,500 từ).}\label{tab:vecfeat}
+\begin{tabular}{lrrrrrr}\toprule
+Mô hình & 200 & 500 & 1000 & 2000 & 5000 & Tất cả \\\midrule
+Multinomial NB & 0,9116 & 0,9332 & 0,9356 & 0,9433 & 0,9499 & 0,9518 \\
+K-NN & 0,9041 & 0,9164 & 0,9187 & 0,9229 & 0,9188 & 0,9176 \\
+Cây quyết định & 0,9015 & 0,9089 & 0,9123 & 0,9089 & 0,9037 & 0,9110 \\\bottomrule
+\end{tabular}\end{table}}
+
+\newcommand{\NBtopspam}{\texttt{longnumtoken}, \texttt{claim}, \texttt{prize}, \texttt{nokia}, \texttt{tone}, \texttt{guaranteed}, \texttt{ppm}, \texttt{cs}, \texttt{awarded}, \texttt{ringtone}}
+
+\newcommand{\NBtopham}{\texttt{gt}, \texttt{lt}, \texttt{lor}, \texttt{home}, \texttt{come}, \texttt{later}, \texttt{da}, \texttt{ok}, \texttt{really}, \texttt{going}}
+
+\newcommand{\DTtop}{\texttt{longnumtoken} (0.746), \texttt{urltoken} (0.076), \texttt{numtoken} (0.038), \texttt{reply} (0.019), \texttt{mobile} (0.016), \texttt{currtoken} (0.009)}

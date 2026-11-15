@@ -1,0 +1,280 @@
+\chapter{THIẾT KẾ GIẢI PHÁP VÀ QUY TRÌNH HỌC MÁY (PIPELINE)}
+\label{chap:chuong3}
+
+\section{Kiến trúc tổng thể của hệ thống}
+\label{sec:kien-truc-he-thong}
+
+Để giải quyết triệt để bài toán phân loại tin nhắn rác với độ tin cậy và tính tái lập cao nhất, Nhóm 13 đã thiết kế một kiến trúc học máy khép kín, phân tầng và tự động hóa cao. Toàn bộ quy trình từ dữ liệu thô ban đầu đến mô hình triển khai thực tế được trực quan hóa thông qua sơ đồ khối tại Sơ đồ~\ref{sd:quy-trinh-pipeline}.
+
+\begin{sodo}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.6cm and 0.6cm,
+    every node/.style={font=\footnotesize},
+    box/.style={draw=blue!70!black, line width=0.8pt, rounded corners=3pt, align=center, minimum height=1.0cm, minimum width=2.0cm, fill=blue!5},
+    process/.style={draw=orange!80!black, line width=0.8pt, rounded corners=3pt, align=center, minimum height=1.0cm, minimum width=2.0cm, fill=orange!10},
+    model/.style={draw=green!60!black, line width=0.8pt, rounded corners=3pt, align=center, minimum height=1.0cm, minimum width=2.2cm, fill=green!8},
+    eval/.style={draw=purple!70!black, line width=0.8pt, rounded corners=3pt, align=center, minimum height=1.0cm, minimum width=2.0cm, fill=purple!8},
+    arr/.style={-{Stealth[length=2.5mm]}, line width=1pt, draw=gray!70!black}
+]
+
+\node[box] (raw) {Dữ liệu thô\\5.574 tin nhắn};
+\node[box, right=of raw] (dedup) {Lọc trùng lặp\\5.171 tin duy nhất};
+\node[box, right=of dedup] (split) {Chia Stratified\\80\% Train / 20\% Test};
+
+\node[process, below=1.0cm of split] (prep) {Tiền xử lý văn bản\\(P0 / P1 / P2)};
+\node[process, left=of prep] (vec) {Vector hóa đặc trưng\\(BoW / TF-IDF)};
+\node[model, left=of vec] (clf) {Mô hình học máy\\(MNB / K-NN / DT)};
+
+\node[model, below=1.0cm of clf] (grid) {GridSearchCV\\(5-fold Stratified CV)};
+\node[eval, right=of grid] (test) {Đánh giá tập Test\\(Accuracy, P, R, F1, ROC)};
+\node[eval, right=of test] (error) {Phân tích lỗi (FP, FN)\\và Giải thích (XAI)};
+
+\draw[arr] (raw) -- (dedup);
+\draw[arr] (dedup) -- (split);
+\draw[arr] (split) -- (prep);
+\draw[arr] (prep) -- (vec);
+\draw[arr] (vec) -- (clf);
+\draw[arr] (clf) -- (grid);
+\draw[arr] (grid) -- (test);
+\draw[arr] (test) -- (error);
+
+% Khung bao Pipeline chống Data Leakage
+\begin{scope}[on background layer]
+    \node[draw=red!70!black, dashed, line width=1pt, rounded corners=5pt, fit=(prep)(vec)(clf), inner sep=7pt, fill=red!2,
+          label={[font=\scriptsize\bfseries, text=red!70!black]above:\textit{sklearn.pipeline.Pipeline (Đóng gói khép kín chống rò rỉ dữ liệu)}}] {};
+\end{scope}
+
+\end{tikzpicture}
+\SodoCaption{Kiến trúc tổng thể quy trình học máy và đường ống xử lý dữ liệu của Nhóm 13}{Nhóm 13 tự thiết kế và xây dựng}
+\label{sd:quy-trinh-pipeline}
+\end{sodo}
+
+Quy trình bao gồm 6 giai đoạn logic kế tiếp nhau:
+\begin{enumerate}
+    \item \textbf{Giai đoạn nạp và làm sạch sơ bộ:} Nạp tệp dữ liệu thô với chuẩn phân tách an toàn, loại bỏ triệt để 403 bản ghi trùng lặp nhằm xóa bỏ nguy cơ ghi nhớ mẫu giữa các tập.
+    \item \textbf{Giai đoạn phân tách bảo vệ (Hold-out Split):} Phân chia tập dữ liệu sạch theo tỷ lệ 80\% cho huấn luyện (4.136 mẫu) và 20\% cho kiểm thử độc lập (1.035 mẫu) có phân tầng tỷ lệ nhãn (Stratified Split). Tập kiểm thử được niêm phong hoàn toàn, không tham gia vào bất kỳ khâu nào của quá trình lựa chọn đặc trưng hay tinh chỉnh tham số.
+    \item \textbf{Giai đoạn đóng gói đường ống (Pipeline Construction):} Tích hợp bộ tiền xử lý, bộ vector hóa đặc trưng và thuật toán phân loại thành một thực thể duy nhất thông qua lớp \texttt{Pipeline} của thư viện \texttt{scikit-learn}.
+    \item \textbf{Giai đoạn tìm kiếm siêu tham số (Hyperparameter Tuning):} Thực hiện thẩm định chéo 5-fold Stratified K-Fold chỉ trên tập huấn luyện 80\%, tối ưu hóa hàm mục tiêu F1-score của lớp tin nhắn rác.
+    \item \textbf{Giai đoạn đánh giá độc lập (Final Evaluation):} Lấy mô hình tối ưu đã được huấn luyện lại trên toàn bộ tập train 80\% để dự đoán một lần duy nhất trên tập test 20\%, xuất các chỉ số định lượng và ma trận nhầm lẫn.
+    \item \textbf{Giai đoạn mổ xẻ lỗi và giải thích (Error Analysis \& Explainability):} Phân lập các ca dự đoán sai FP và FN, đối chiếu với các thuộc tính cấu trúc và trích xuất độ quan trọng của từ vựng qua Log-Odds Ratio.
+\end{enumerate}
+
+\section{Chiến lược phân chia dữ liệu và kiểm soát rò rỉ thông tin}
+\label{sec:kiem-soat-leakage}
+
+Hiện tượng rò rỉ dữ liệu (Data Leakage) là một trong những nguyên nhân hàng đầu khiến các mô hình học máy đạt điểm số rất cao trên tập kiểm nghiệm trong phòng thí nghiệm nhưng thất bại hoàn toàn khi triển khai vào môi trường thực tế. Rò rỉ dữ liệu xảy ra khi thông tin từ bên ngoài tập huấn luyện (cụ thể là từ tập kiểm định chéo hoặc tập kiểm thử độc lập) bị thẩm thấu vào quá trình huấn luyện mô hình.
+
+Trong bài toán phân loại văn bản, rò rỉ dữ liệu thường xuất hiện qua hai con đường tinh vi:
+\begin{enumerate}
+    \item \textbf{Con đường thứ nhất --- Trùng lặp mẫu trước khi chia tập:} Như đã phân tích tại Mục~\ref{sec:eda}, nếu không loại bỏ 403 tin nhắn trùng lặp trước khi gọi hàm \texttt{train\_test\_split}, một tỷ lệ lớn các tin nhắn giống hệt nhau sẽ rơi đồng thời vào cả tập train và tập test. Nhóm đã triệt tiêu hoàn toàn con đường này bằng lệnh \texttt{df = raw.drop\_duplicates("text").reset\_index(drop=True)}.
+    \item \textbf{Con đường thứ hai --- Học từ điển và trọng số IDF trên toàn bộ dữ liệu:} Rất nhiều lập trình viên mắc sai lầm nghiêm trọng khi thực hiện:
+    \begin{lstlisting}[language=Python]
+# SAI LẦM PHỔ BIẾN GÂY DATA LEAKAGE:
+vectorizer.fit(X_toan_bo_du_lieu) # Rò rỉ từ vựng và tần số tài liệu của tập test!
+X_tr_vec = vectorizer.transform(X_train)
+X_te_vec = vectorizer.transform(X_test)
+    \end{lstlisting}
+    Khi gọi \texttt{vectorizer.fit()} trên toàn bộ dữ liệu, bộ vector hóa đã “nhìn thấy trước” tập từ vựng của tập test, đồng thời giá trị tần số tài liệu $\text{DF}(t)$ và trọng số $\text{IDF}(t)$ đã bị biến đổi bởi sự hiện diện của các văn bản trong tập test. Điều này vi phạm nghiêm trọng tính độc lập của tập kiểm thử!
+\end{enumerate}
+
+\textbf{Giải pháp kiểm soát rò rỉ triệt để của Nhóm 13:}
+Nhóm áp dụng nguyên tắc đóng gói vectorizer và mô hình bên trong đối tượng \texttt{Pipeline} của \texttt{scikit-learn}:
+\begin{lstlisting}[language=Python]
+pipeline = Pipeline([
+    ("vec", make_vectorizer(prep_name, rep_name)),
+    ("clf", model)
+])
+\end{lstlisting}
+Khi đưa đối tượng \texttt{pipeline} này vào quy trình thẩm định chéo 5-fold (\texttt{cross\_validate} hoặc \texttt{GridSearchCV}), tại mỗi fold:
+\begin{itemize}
+    \item Thư viện \texttt{scikit-learn} tự động chia tập huấn luyện thành 4 phần làm sub-train và 1 phần làm validation.
+    \item Bước \texttt{vec.fit()} \textbf{chỉ được gọi duy nhất trên 4 phần sub-train của fold đó}. Toàn bộ từ điển từ vựng $\mathcal{V}_{\text{fold}}$ và trọng số $\text{IDF}_{\text{fold}}$ chỉ được tính toán từ các mẫu sub-train.
+    \item Sau đó, phần validation chỉ được biến đổi thông qua \texttt{vec.transform()}. Bất kỳ từ mới nào chỉ xuất hiện ở tập validation đều bị bỏ qua một cách tự nhiên.
+\end{itemize}
+Nhờ thiết kế này, nhóm đảm bảo 100\% tính minh bạch về phương pháp luận và ngăn ngừa triệt để mọi hình thức rò rỉ dữ liệu.
+
+\section{Thiết kế không gian tiền xử lý và biểu diễn đặc trưng}
+\label{sec:thiet-ke-khong-gian}
+
+Để trả lời câu hỏi nghiên cứu cốt lõi: *“Thay đổi cách thức xử lý dữ liệu và biểu diễn đặc trưng tác động như thế nào đến năng lực của từng thuật toán học máy?”*, nhóm đã thiết kế một không gian thực nghiệm đa chiều kết hợp giữa \textbf{3 mức độ tiền xử lý} và \textbf{4 phương pháp biểu diễn văn bản}.
+
+\subsection{Ba luồng tiền xử lý thực nghiệm}
+\begin{enumerate}
+    \item \textbf{Luồng P0 (P0\_raw --- Xử lý thô cơ bản):}
+    Không can thiệp biểu thức chính quy, chỉ chuyển toàn bộ ký tự thành chữ thường và áp dụng bộ tách từ mặc định của \texttt{scikit-learn}. Đây là phương án đối chứng cơ sở (Baseline Preprocessing) để đo lường giá trị gia tăng của các kỹ thuật xử lý nâng cao.
+    \item \textbf{Luồng P1 (P1\_normalize --- Chuẩn hóa bảo toàn tín hiệu):}
+    Áp dụng hàm chuẩn hóa có chủ đích \texttt{normalize\_text}:
+    \begin{itemize}
+        \item Nhận diện và quy đổi liên kết URL/Domain thành \texttt{urltoken}.
+        \item Nhận diện và quy đổi ký hiệu tiền tệ thành \texttt{currtoken}.
+        \item Nhận diện và quy đổi chuỗi số từ 5 chữ số trở lên thành \texttt{longnumtoken}.
+        \item Nhận diện và quy đổi số thông thường thành \texttt{numtoken}.
+        \item Làm sạch dấu câu và ký tự phi chữ cái, chuẩn hóa khoảng trắng.
+        \item \textbf{Không loại bỏ từ dừng} nhằm bảo toàn các đại từ nhân xưng và liên từ ngữ cảnh.
+    \end{itemize}
+    \item \textbf{Luồng P2 (P2\_norm\_stop --- Chuẩn hóa kết hợp loại bỏ Stop words):}
+    Kế thừa toàn bộ quá trình chuẩn hóa bảo toàn tín hiệu của P1, đồng thời loại bỏ toàn bộ danh sách các từ dừng chuẩn tiếng Anh (\texttt{stop\_words="english"}).
+\end{enumerate}
+
+\subsection{Bốn không gian biểu diễn đặc trưng}
+\begin{enumerate}
+    \item \textbf{Biểu diễn 1 (BoW\_uni):} Mô hình túi từ Bag-of-Words dựa trên đếm tần số (\texttt{CountVectorizer}), chỉ sử dụng các từ đơn lẻ unigram (\texttt{ngram\_range=(1, 1)}), ngưỡng \texttt{min\_df=1}.
+    \item \textbf{Biểu diễn 2 (TFIDF\_uni):} Phương pháp trọng số TF-IDF kết hợp chuẩn hóa vector $L_2$ (\texttt{TfidfVectorizer}), sử dụng unigram (\texttt{ngram\_range=(1, 1)}), ngưỡng \texttt{min\_df=1}.
+    \item \textbf{Biểu diễn 3 (BoW\_bi):} Mô hình túi từ BoW kết hợp cả unigram và bigram (\texttt{ngram\_range=(1, 2)}), áp dụng ngưỡng \texttt{min\_df=2} để triệt tiêu các cặp từ hiếm xuất hiện 1 lần.
+    \item \textbf{Biểu diễn 4 (TFIDF\_bi):} Phương pháp trọng số TF-IDF chuẩn hóa $L_2$ kết hợp unigram và bigram (\texttt{ngram\_range=(1, 2)}), ngưỡng \texttt{min\_df=2}.
+\end{enumerate}
+
+Sự kết hợp giữa 3 mức tiền xử lý và 4 cách biểu diễn tạo thành một \textbf{ma trận 12 cấu hình dữ liệu} (Data Configurations) cho mỗi thuật toán. Đối với cả 3 thuật toán (MNB, K-NN, DT), hệ thống thực hiện khảo nghiệm toàn diện trên tổng số \textbf{36 cấu hình thực nghiệm độc lập}.
+
+\section{Thiết kế không gian siêu tham số và chiến lược GridSearchCV}
+\label{sec:thiet-ke-gridsearch}
+
+\subsection{Không gian siêu tham số (Hyperparameter Grids)}
+Để tìm ra cấu hình tham số tối ưu cho từng thuật toán, nhóm đã xây dựng không gian tìm kiếm lưới siêu tham số (Hyperparameter Search Space) dựa trên các cơ sở lý thuyết đã học:
+
+\begin{table}[H]
+\centering
+\caption{Không gian tìm kiếm siêu tham số cho các thuật toán trong GridSearchCV}
+\label{tab:khong-gian-sieu-tham-so}
+\begin{tabular}{|l|l|p{7.5cm}|}
+\hline
+\textbf{Mô hình} & \textbf{Tham số kiểm tra} & \textbf{Các giá trị khảo sát} \\
+\hline
+\multirow{2}{*}{\textbf{MultinomialNB}} & \texttt{clf\_\_alpha} & $[0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 2.0]$ \\
+\cline{2-3}
+& \texttt{clf\_\_fit\_prior} & $[\text{True}, \text{False}]$ \\
+\hline
+\multirow{3}{*}{\textbf{K-NN}} & \texttt{clf\_\_n\_neighbors} & $[1, 3, 5, 7, 9, 15]$ \\
+\cline{2-3}
+& \texttt{clf\_\_metric} & $[\text{'cosine'}, \text{'euclidean'}]$ \\
+\cline{2-3}
+& \texttt{clf\_\_weights} & $[\text{'uniform'}, \text{'distance'}]$ \\
+\hline
+\multirow{3}{*}{\textbf{DecisionTree}} & \texttt{clf\_\_criterion} & $[\text{'gini'}, \text{'entropy'}]$ \\
+\cline{2-3}
+& \texttt{clf\_\_max\_depth} & $[\text{None}, 5, 10, 20, 40]$ \\
+\cline{2-3}
+& \texttt{clf\_\_min\_samples\_leaf} & $[1, 2, 5]$ \\
+\hline
+\end{tabular}
+\Nguon{Định nghĩa trong từ điển GRIDS tại module run\_experiments.py}
+\end{table}
+
+\subsection{Chiến lược phương pháp luận: Tinh chỉnh tham số theo từng ô cấu hình}
+Một phát hiện mang tính đột phá về mặt phương pháp luận nghiên cứu của nhóm trong đề tài này là: \textbf{Không thể so sánh khách quan các phương pháp biểu diễn đặc trưng nếu chỉ sử dụng siêu tham số mặc định của thư viện!}
+Cụ thể:
+\begin{itemize}
+    \item Đối với Multinomial Naive Bayes, tham số làm trơn mặc định của scikit-learn là $\alpha = 1.0$. Với vector đếm BoW, tần số xuất hiện của từ thường là các số nguyên lớn ($1, 2, 5, 10$), nên việc cộng thêm $\alpha = 1$ chỉ đóng vai trò làm trơn nhẹ. Tuy nhiên, với vector TF-IDF đã qua chuẩn hóa $L_2$, các phần tử trong vector có giá trị rất nhỏ (thường chỉ dao động từ $0.01$ đến $0.15$). Khi cộng thêm $\alpha = 1.0$, hằng số làm trơn lớn gấp nhiều lần giá trị đặc trưng thực tế, dẫn tới việc san phẳng hoàn toàn xác suất có điều kiện $P(w_i|y)$, khiến mô hình dự đoán rất kém! Nếu chỉ nhìn vào kết quả tham số mặc định, người nghiên cứu sẽ đưa ra kết luận sai lầm rằng *“TF-IDF kém hơn BoW đối với Naive Bayes”*.
+    \item Đối với K-NN, tham số mặc định là khoảng cách Euclid (\texttt{metric='euclidean'}). Trên vector đếm BoW thưa, khoảng cách Euclid bị chi phối hoàn toàn bởi độ dài văn bản khiến K-NN thất bại thảm hại (F1 chỉ đạt $\sim 0.42$). Chỉ khi tinh chỉnh chuyển sang khoảng cách \texttt{cosine} và biểu diễn TF-IDF, K-NN mới phát huy sức mạnh thực sự.
+\end{itemize}
+
+Do đó, nhóm quyết định áp dụng quy trình 2 giai đoạn:
+\begin{itemize}
+    \item \textbf{Giai đoạn 1 (Khảo sát sơ bộ):} Đánh giá toàn bộ 36 cấu hình với tham số mặc định để ghi nhận hiện tượng và làm mốc so sánh baseline.
+    \item \textbf{Giai đoạn 2 (Tinh chỉnh chuyên sâu theo từng ô):} Đối với Naive Bayes và K-NN, tiến hành chạy \texttt{GridSearchCV} trên toàn bộ 12 ô cấu hình dữ liệu để tìm ra bộ siêu tham số tốt nhất cho riêng ô đó, sau đó mới so sánh điểm F1 tối ưu của các ô với nhau. Đối với Cây quyết định (vốn có tính chất bất biến với các phép co giãn đơn điệu của đặc trưng), nhóm chọn cấu hình tiền xử lý tốt nhất ở Giai đoạn 1 rồi tiến hành tối ưu hóa cấu trúc cây (\texttt{max\_depth}, \texttt{criterion}, \texttt{min\_samples\_leaf}).
+\end{itemize}
+
+\section{Phân tích cấu trúc mã nguồn và chức năng các module}
+\label{sec:phan-tich-ma-nguon}
+
+Toàn bộ dự án được tổ chức khoa học, tuân thủ nghiêm ngặt các nguyên tắc Clean Code và tính module hóa trong phát triển phần mềm máy học. Cấu trúc cây thư mục của dự án như sau:
+
+\begin{lstlisting}[language=bash]
+sms_spam_project/
+|--  data/
+|     |--  SMSSpamCollection          # Tep du lieu tho goc tu UCI (478 KB)
+|     \--  readme_dataset.txt         # Dac ta nguon goc, tac gia va giay phep CC BY 4.0
+|--  src/
+|     |--  common.py                  # Ham dung chung: nap data, normalize, pipeline
+|     |--  run_experiments.py         # Module thuc nghiem chinh (EDA, GridSearch, Test)
+|     |--  extra_nb_alpha_check.py    # Kiem tra mo rong do nhay alpha cho Naive Bayes
+|     |--  vectorizer_sensitivity.py  # Thuc nghiem do nhay ngram, min_df, max_features
+|     |--  predict.py                 # Chuong trinh demo giao dien dong lenh CLI
+|     \--  demo_app.py                # Ung dung demo giao dien web bang Streamlit
+|--  notebooks/
+|     \--  sms_spam_pipeline.ipynb    # Jupyter Notebook truc quan tung buoc co luu ket qua
+|--  results/                       # Luu tru toan bo 16 tep CSV, summary.json va log
+|--  figures/                       # Luu tru 9 bieu do chat luong cao phuc vu bao cao
+|--  requirements.txt               # Khai bao cac thu vien khoa hoc du lieu
+\--  requirements-demo.txt          # Khai bao them Streamlit cho ung dung demo
+\end{lstlisting}
+
+\subsection{Module \texttt{src/common.py} --- Hạt nhân xử lý dùng chung}
+Module \texttt{common.py} là thành phần trung tâm cung cấp dữ liệu sạch, các hàm tiền xử lý chuẩn hóa và hàm tạo đường ống học máy cho toàn bộ các module thực nghiệm, Jupyter notebook và ứng dụng web demo. Việc tập trung mã nguồn xử lý vào một tệp duy nhất loại bỏ hoàn toàn sự trùng lặp mã nguồn (Code Duplication), đảm bảo tính nhất quán tuyệt đối về logic giữa các giai đoạn nghiên cứu.
+
+Đoạn mã nguồn then chốt thực hiện nạp dữ liệu và chuẩn hóa bảo toàn tín hiệu được trích xuất tại Đoạn mã~\ref{lst:common-code}:
+
+\begin{lstlisting}[language=Python, caption={Trích đoạn mã nguồn module src/common.py xử lý nạp và chuẩn hóa văn bản}, label={lst:common-code}]
+import csv
+import re
+from pathlib import Path
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+ROOT = Path(__file__).resolve().parents[1]
+DATA_PATH = ROOT / "data" / "SMSSpamCollection"
+RANDOM_STATE = 42
+
+def load_raw(path=DATA_PATH):
+    """Doc file tho SMS Spam Collection (tab-separated, UTF-8)."""
+    df = pd.read_csv(path, sep="\t", header=None, names=["label", "text"],
+                     encoding="utf-8", quoting=csv.QUOTE_NONE)
+    df["y"] = (df["label"] == "spam").astype(int)
+    return df
+
+# Bieu thuc chinh quy nhan dien tin hieu cau truc
+URL_RE = re.compile(r"(https?://\S+|www\.\S+|\b\S+\.(com|co\.uk|net|org)\b\S*)", re.I)
+LONGNUM_RE = re.compile(r"\b\d{5,}\b")        # So dien thoai, ma dich vu >= 5 chu so
+NUM_RE = re.compile(r"\b\d+\b")
+CURR_RE = re.compile(r"[£$€]")
+
+def normalize_text(s: str) -> str:
+    """Chuan hoa giu tin hieu: thay the URL, so dai, tien te bang token dac biet."""
+    s = s.lower()
+    s = URL_RE.sub(" urltoken ", s)
+    s = CURR_RE.sub(" currtoken ", s)
+    s = LONGNUM_RE.sub(" longnumtoken ", s)
+    s = NUM_RE.sub(" numtoken ", s)
+    s = re.sub(r"[^a-z\s]", " ", s)           # Loai bo dau cau con lai
+    return re.sub(r"\s+", " ", s).strip()
+
+def make_pipeline(model_name, prep_name, rep_name, model=None, memory=None):
+    """Dong goi Vectorizer va Model vao Pipeline ngan chan Data Leakage."""
+    return Pipeline([
+        ("vec", make_vectorizer(prep_name, rep_name)),
+        ("clf", model if model is not None else make_model(model_name))
+    ], memory=memory)
+\end{lstlisting}
+
+\subsection{Module \texttt{src/run\_experiments.py} --- Điều phối toàn bộ thực nghiệm}
+Module \texttt{run\_experiments.py} là kịch bản tự động hóa toàn bộ quy trình thực nghiệm quy mô lớn:
+\begin{itemize}
+    \item Tự động trích xuất các chỉ số EDA, vẽ và lưu các biểu đồ phân phối nhãn, độ dài và top từ khóa vào thư mục \texttt{figures/}.
+    \item Thực hiện phân chia tập Train 80\% và Test 20\% với \texttt{random\_state=42}.
+    \item Chạy vòng lặp kiểm định chéo 5-fold CV cho 36 cấu hình Giai đoạn 1, lưu kết quả vào \texttt{results/stage1\_prep\_repr\_comparison.csv} và sinh biểu đồ nhiệt \texttt{stage1\_heatmap\_cv\_f1.png}.
+    \item Điều phối quá trình \texttt{GridSearchCV} tinh chỉnh siêu tham số trên từng ô cấu hình ở Giai đoạn 2, lưu chi tiết vào các tệp \texttt{grid\_MultinomialNB.csv}, \texttt{grid\_KNN.csv}, \texttt{grid\_DecisionTree.csv} và biểu đồ tham số \texttt{stage2\_param\_curves.png}.
+    \item Đánh giá mô hình tối ưu trên tập kiểm thử độc lập, xuất kết quả vào \texttt{final\_test\_results.csv}, sinh ma trận nhầm lẫn \texttt{confusion\_matrices.png}, đường cong ROC \texttt{roc\_curves.png} và biểu đồ đối sánh \texttt{final\_metric\_bars.png}.
+    \item Chạy thực nghiệm độ ổn định qua 5 seed ngẫu nhiên (\texttt{seed\_stability\_raw.csv}, \texttt{seed\_stability\_summary.csv}).
+    \item Phân lập danh sách các mẫu dự đoán sai FP và FN, phân tích thuộc tính lỗi và trích xuất top từ vựng theo Log-Odds Ratio.
+    \item Xuất toàn bộ siêu tham số và kết quả đo lường vào tệp tổng hợp \texttt{summary.json} và lưu mô hình tối ưu nhất vào \texttt{results/best\_model.joblib}.
+\end{itemize}
+
+\subsection{Module \texttt{src/vectorizer\_sensitivity.py} và \texttt{src/extra\_nb\_alpha\_check.py}}
+\begin{itemize}
+    \item \texttt{vectorizer\_sensitivity.py}: Được thiết kế chuyên biệt để đáp ứng chuẩn xác yêu cầu của Mục 3.1 trong tài liệu hướng dẫn bài tập lớn. Module giữ cố định cấu hình tối ưu của từng mô hình, sau đó khảo sát độc lập tác động của 4 yếu tố vector hóa: unigram so với bigram, các mức \texttt{min\_df} $\in [1, 2, 3, 5]$, các mức \texttt{max\_df} $\in [0.5, 1.0]$, và số lượng đặc trưng \texttt{max\_features} $\in [200, 500, 1000, 2000, 5000, \text{Tất cả}]$, vẽ đồ thị \texttt{vectorizer\_sensitivity.png}.
+    \item \texttt{extra\_nb\_alpha\_check.py}: Mở rộng phạm vi khảo sát tham số làm trơn $\alpha$ của Naive Bayes lên các giá trị lớn hơn ($\alpha \in [0.1, 10.0]$) trên 3 seed phân chia fold khác nhau nhằm kiểm chứng tính chắc chắn của điểm cực trị $\alpha = 2.0$.
+\end{itemize}
+
+\subsection{Module \texttt{src/predict.py} và \texttt{src/demo\_app.py}}
+\begin{itemize}
+    \item \texttt{predict.py}: Cung cấp giao diện dòng lệnh (CLI) cho phép người dùng hoặc hệ thống khác nạp mô hình đã lưu \texttt{best\_model.joblib} để phân loại nhanh bất kỳ chuỗi tin nhắn nào được truyền qua đối số dòng lệnh hoặc chế độ nhập tương tác.
+    \item \texttt{demo\_app.py}: Ứng dụng web trực quan xây dựng trên nền tảng Streamlit, cung cấp bảng điều khiển phân loại, so sánh tức thời cả 3 mô hình, và tính năng giải thích quyết định dựa trên đóng góp log-odds của từng từ vựng.
+\end{itemize}
+
+\section{Tóm tắt chương 3}
+Chương 3 đã chi tiết hóa giải pháp kỹ thuật và kiến trúc hệ thống học máy của nhóm. Quy trình phân tách Stratified 80/20 kết hợp đóng gói \texttt{Pipeline} khép kín đã thiết lập một hàng rào bảo vệ vững chắc chống rò rỉ dữ liệu. Không gian thực nghiệm gồm 3 mức tiền xử lý và 4 phương pháp biểu diễn tạo thành 36 cấu hình khảo nghiệm toàn diện. Chiến lược tinh chỉnh siêu tham số theo từng ô cấu hình ở Giai đoạn 2 đã khắc phục hoàn toàn nhược điểm của việc đánh giá theo tham số mặc định. Toàn bộ kiến trúc mã nguồn được phân rã thành các module chuyên biệt, có tính liên kết chặt chẽ và khả năng tái lập tuyệt đối. Toàn bộ kết quả thực nghiệm định lượng thu được sẽ được phân tích chi tiết trong Chương 4.

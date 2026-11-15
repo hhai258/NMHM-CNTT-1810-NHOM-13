@@ -1,0 +1,336 @@
+\chapter{CƠ SỞ LÝ THUYẾT VÀ CÁC THUẬT TOÁN HỌC MÁY}
+\label{chap:chuong2}
+
+\section{Tổng quan về quy trình phân loại văn bản trong NLP}
+\label{sec:quy-trinh-nlp}
+
+Phân loại văn bản (Text Classification) là một trong những bài toán kinh điển và căn bản nhất của lĩnh vực Xử lý ngôn ngữ tự nhiên (Natural Language Processing --- NLP) và Học máy có giám sát (Supervised Machine Learning). Mục tiêu của bài toán là xây dựng một hàm ánh xạ $f: \mathcal{X} \rightarrow \mathcal{Y}$, trong đó miền đầu vào $\mathcal{X}$ là tập hợp các chuỗi ký tự hoặc văn bản ngôn ngữ tự nhiên có cấu trúc phi định hình, và miền đầu ra $\mathcal{Y}$ là một tập hữu hạn các nhãn lớp rời rạc $\mathcal{Y} = \{c_1, c_2, \dots, c_K\}$. Trong bài toán phân loại tin nhắn rác SMS, tập nhãn là nhị phân:
+\begin{equation}
+\mathcal{Y} = \{0: \text{ham (tin hợp lệ)}, \quad 1: \text{spam (tin nhắn rác)}\}
+\end{equation}
+
+Do các thuật toán học máy về bản chất chỉ có thể tính toán trên các vector số thực trong không gian vector nhiều chiều $\mathbb{R}^d$, một quy trình phân loại văn bản chuẩn mực luôn phải trải qua bốn chặng chuyển đổi kế tiếp nhau:
+\begin{enumerate}
+    \item \textbf{Tiền xử lý văn bản (Text Preprocessing):} Làm sạch nhiễu, chuẩn hóa hình thái từ vựng, chuyển đổi ký tự hoa/thường và thay thế các thành phần phi từ ngữ.
+    \item \textbf{Biểu diễn đặc trưng (Feature Representation / Vectorization):} Ánh xạ các chuỗi từ vựng thành các vector số học đại diện (như Bag-of-Words hoặc TF-IDF) phản ánh phân phối và tầm quan trọng của các thuật ngữ.
+    \item \textbf{Huấn luyện mô hình (Model Training):} Áp dụng các thuật toán học máy để tối ưu hóa hàm mục tiêu, học các ranh giới quyết định (Decision Boundaries) phân tách các lớp trong không gian đặc trưng.
+    \item \textbf{Đánh giá và kiểm chứng (Evaluation):} Kiểm nghiệm hiệu năng tổng quát hóa trên dữ liệu độc lập thông qua hệ thống các độ đo thống kê phù hợp.
+\end{enumerate}
+
+\section{Các kỹ thuật tiền xử lý văn bản}
+\label{sec:tien-xu-ly-ly-thuyet}
+
+Tiền xử lý văn bản giữ vai trò quyết định đến chất lượng của không gian đặc trưng. Một câu văn thô chứa vô số thông tin dư thừa, các dị thường về kiểu gõ, dấu câu ngẫu nhiên hoặc các thực thể biến thiên liên tục. Nếu đưa trực tiếp văn bản thô vào bộ trích xuất đặc trưng, kích thước từ điển (Vocabulary) sẽ bùng nổ mất kiểm soát, sinh ra một không gian vector cực kỳ thưa thớt (Sparse space) chứa đầy nhiễu.
+
+\subsection{Chuẩn hóa chữ thường và làm sạch cơ bản}
+Bước sơ đẳng nhất trong xử lý văn bản là chuyển đổi toàn bộ ký tự về dạng chữ thường (Lowercasing). Trong tiếng Anh, việc viết hoa chữ cái đầu câu (như *“Call”* so với *“call”*) không mang lại sự khác biệt về mặt bản thể từ vựng. Chuẩn hóa chữ thường giúp quy tụ các biến thể này về một từ duy nhất, giảm kích thước từ vựng và khắc phục hiện tượng thưa dữ liệu. Kế đến, các ký tự ngắt dòng (\texttt{\textbackslash{}n}, \texttt{\textbackslash{}r}), khoảng trắng thừa liên tiếp được chuẩn hóa thành một dấu cách đơn giản (\texttt{\textbackslash{}s+} $\rightarrow$ \texttt{' '}).
+
+\subsection{Kỹ thuật bảo toàn tín hiệu bằng Token thay thế có chủ đích}
+Một sai lầm rất phổ biến trong xử lý văn bản truyền thống là việc loại bỏ máy móc toàn bộ các ký tự số và dấu câu thông qua các hàm xóa ký tự không phải chữ cái (\texttt{[\textasciicircum{}a-z]}). Trong bài toán phát hiện tin nhắn rác, điều này dẫn tới việc xóa sạch các thông tin sống còn:
+\begin{itemize}
+    \item Một số điện thoại cụ thể như \texttt{09061701461} hay \texttt{08712400603} hầu như chỉ xuất hiện 1 lần duy nhất trong toàn bộ tập dữ liệu. Nếu giữ nguyên, mỗi số điện thoại này sẽ trở thành một từ vựng riêng biệt có tần suất $1$ (cực kỳ hiếm), hoàn toàn vô dụng cho việc học quy luật tổng quát.
+    \item Nhưng nếu xóa bỏ hoàn toàn số, mô hình sẽ mất trắng thông tin rằng *“tin nhắn này có chứa một số điện thoại dài mời gọi liên hệ”*.
+\end{itemize}
+
+Để giải quyết mâu thuẫn này, nhóm đã nghiên cứu và ứng dụng kỹ thuật \textbf{Bảo toàn tín hiệu cấu trúc (Signal-preserving Tokenization)} thông qua biểu thức chính quy (Regex). Cụ thể:
+\begin{enumerate}
+    \item \textbf{Token hóa liên kết Web/Domain (\texttt{urltoken}):}
+    Sử dụng biểu thức chính quy phát hiện toàn bộ các định dạng URL bắt đầu bằng \texttt{http://}, \texttt{https://}, \texttt{www.} hoặc các đuôi tên miền phổ biến (\texttt{.com}, \texttt{.co.uk}, \texttt{.net}, \texttt{.org}):
+    \begin{equation}
+    \text{URL\_RE} = \verb|r"(https?://\S+|www\.\S+|\b\S+\.(com|co\.uk|net|org)\b\S*)"|
+    \end{equation}
+    Mọi địa chỉ web được thay thế thống nhất bằng từ khóa đặc biệt \texttt{urltoken}.
+    \item \textbf{Token hóa ký hiệu tiền tệ (\texttt{currtoken}):}
+    Phát hiện các ký hiệu tiền tệ phổ biến trong tin nhắn lừa đảo và trao thưởng (£, \$, €):
+    \begin{equation}
+    \text{CURR\_RE} = \verb|r"[£$€]"|
+    \end{equation}
+    Được thay thế bằng token \texttt{currtoken}.
+    \item \textbf{Token hóa chuỗi số dài liên tiếp (\texttt{longnumtoken}):}
+    Phát hiện các chuỗi số có từ 5 chữ số liên tiếp trở lên (đại diện cho số điện thoại di động, đầu số tổng đài hoặc mã thẻ cào):
+    \begin{equation}
+    \text{LONGNUM\_RE} = \verb|r"\b\d{5,}\b"|
+    \end{equation}
+    Được thay thế bằng token \texttt{longnumtoken}.
+    \item \textbf{Token hóa số thông thường (\texttt{numtoken}):}
+    Các số ngắn còn lại (như giờ giấc, số lượng) được quy đổi về \texttt{numtoken}:
+    \begin{equation}
+    \text{NUM\_RE} = \verb|r"\b\d+\b"|
+    \end{equation}
+\end{enumerate}
+
+Sau khi đã bảo toàn các tín hiệu cấu trúc dưới dạng các token đặc biệt, toàn bộ các dấu câu và ký tự phi chữ cái còn lại mới được loại bỏ an toàn. Kỹ thuật này chuyển hóa một tập hợp vô số các chuỗi số/URL ngẫu nhiên thành một số ít các đặc trưng thống kê có trọng số cực cao.
+
+\subsection{Kỹ thuật loại bỏ từ dừng (Stop Words Removal)}
+Từ dừng (Stop words) là các từ ngữ xuất hiện với tần suất rất cao trong ngôn ngữ tự nhiên nhưng mang rất ít giá trị phân biệt ngữ nghĩa (như các đại từ, giới từ, liên từ trong tiếng Anh: *“is”*, *“the”*, *“at”*, *“which”*, *“on”*). Việc loại bỏ danh sách từ dừng chuẩn tiếng Anh (English stop words) giúp:
+\begin{itemize}
+    \item Thu hẹp đáng kể số chiều của không gian đặc trưng;
+    \item Tập trung trọng số học tập của mô hình vào các thực từ (Content words) mang tải trọng ngữ nghĩa lớn như động từ, danh từ và tính từ.
+\end{itemize}
+Tuy nhiên, trong xử lý văn bản, việc loại bỏ stop words đôi khi làm mất đi các đại từ mang tính tương tác cá nhân (ví dụ: sự khác biệt giữa *“you”*, *“me”*, *“call me”* so với *“free to you”*). Do đó, việc loại bỏ từ dừng cần được đưa vào thực nghiệm để đối sánh khách quan thay vì mặc định áp dụng.
+
+\section{Các phương pháp biểu diễn đặc trưng văn bản}
+\label{sec:bieu-dien-dac-trung}
+
+\subsection{Mô hình túi từ (Bag-of-Words --- BoW)}
+Mô hình túi từ (Bag-of-Words) là phương pháp biểu diễn văn bản cổ điển và nền tảng nhất. Cho một tập ngữ liệu gồm $M$ văn bản $\mathcal{D} = \{d_1, d_2, \dots, d_M\}$. Giả sử sau quá trình tiền xử lý, tập từ vựng duy nhất được xây dựng gồm $V$ từ: $\mathcal{V} = \{w_1, w_2, \dots, w_V\}$.
+
+Trong mô hình BoW (được triển khai thông qua lớp \texttt{CountVectorizer} của scikit-learn), mỗi văn bản $d$ được biểu diễn thành một vector $V$ chiều:
+\begin{equation}
+\mathbf{x} = [x_1, x_2, \dots, x_V]^T \in \mathbb{N}^V
+\end{equation}
+trong đó mỗi phần tử $x_j$ thể hiện số lần xuất hiện (Term Frequency) của từ $w_j$ trong văn bản $d$:
+\begin{equation}
+x_j = \text{count}(w_j, d)
+\end{equation}
+Mô hình túi từ hoàn toàn bỏ qua thứ tự xuất hiện của các từ trong câu cũng như cấu trúc ngữ pháp, chỉ lưu giữ thông tin về sự hiện diện và số lượng đếm của các từ.
+
+\subsection{Phương pháp trọng số TF-IDF}
+Một nhược điểm cố hữu của mô hình túi từ BoW là việc gán trọng số thuần túy theo số lần xuất hiện: những từ xuất hiện quá nhiều trong mọi văn bản sẽ có giá trị rất lớn, lấn át các từ mang tính đặc thù cao. Để khắc phục điều này, phương pháp \textbf{TF-IDF (Term Frequency --- Inverse Document Frequency)} được sử dụng nhằm cân bằng giữa tần suất cục bộ của từ trong một văn bản và độ hiếm tổng thể của từ đó trong toàn bộ tập ngữ liệu.
+
+Trọng số TF-IDF của từ $t$ trong văn bản $d$ thuộc tập ngữ liệu $\mathcal{D}$ được xác định bởi:
+\begin{equation}
+\text{TF-IDF}(t, d, \mathcal{D}) = \text{TF}(t, d) \times \text{IDF}(t, \mathcal{D})
+\end{equation}
+
+Trong thư viện \texttt{scikit-learn} (\texttt{TfidfVectorizer}), thành phần tần suất nghịch đảo tài liệu IDF được tính toán có làm trơn (Smooth IDF) theo công thức:
+\begin{equation}
+\text{IDF}(t, \mathcal{D}) = \ln \left( \frac{1 + |\mathcal{D}|}{1 + \text{DF}(t)} \right) + 1
+\end{equation}
+trong đó $|\mathcal{D}|$ là tổng số văn bản trong tập ngữ liệu huấn luyện, và $\text{DF}(t)$ (Document Frequency) là số lượng văn bản có chứa từ $t$. Giá trị $+1$ trong tử số và mẫu số giúp triệt tiêu hiện tượng chia cho 0, và số hạng $+1$ ở ngoài đảm bảo giá trị IDF luôn dương.
+
+Sau khi tính toán trọng số TF-IDF thô cho từng từ trong văn bản, vector đặc trưng $\mathbf{x} = [v_1, v_2, \dots, v_V]$ được chuẩn hóa theo chuẩn Euclid ($L_2$-norm) để đưa độ dài vector về $1$:
+\begin{equation}
+\mathbf{x}_{\text{norm}} = \frac{\mathbf{x}}{\|\mathbf{x}\|_2} = \frac{[v_1, v_2, \dots, v_V]}{\sqrt{\sum_{j=1}^V v_j^2}}
+\end{equation}
+Chuẩn hóa $L_2$ đóng vai trò cốt tử: nó triệt tiêu ảnh hưởng của độ dài văn bản, giúp hai văn bản có cùng nội dung từ ngữ nhưng độ dài ngắn khác nhau sẽ có vector biểu diễn gần nhau trong không gian vector.
+
+\subsection{Không gian n-gram và các tham số lọc từ vựng}
+\begin{itemize}
+    \item \textbf{Khái niệm n-gram:} Một n-gram là một chuỗi gồm $n$ từ liên tiếp xuất hiện cùng nhau trong văn bản.
+    \begin{itemize}
+        \item $n=1$ (Unigram): Từng từ đơn lẻ độc lập (ví dụ: *“claim”*, *“prize”*).
+        \item $n=2$ (Bigram): Cặp 2 từ liền kề (ví dụ: *“claim prize”*, *“urgent call”*).
+    \end{itemize}
+    Việc kết hợp unigram và bigram (\texttt{ngram\_range=(1, 2)}) cho phép mô hình lưu giữ một phần ngữ cảnh cục bộ và các cụm từ cố định.
+    \item \textbf{Tham số \texttt{min\_df} (Minimum Document Frequency):} Ngưỡng tần số tài liệu tối thiểu để một từ được đưa vào từ điển. Ví dụ \texttt{min\_df=2} quy định một từ phải xuất hiện ở ít nhất 2 văn bản khác nhau mới được giữ lại, giúp loại bỏ các từ gõ sai chính tả hoặc dị thường chỉ xuất hiện 1 lần.
+    \item \textbf{Tham số \texttt{max\_df} (Maximum Document Frequency):} Ngưỡng tỷ lệ tài liệu tối đa. Ví dụ \texttt{max\_df=0.5} quy định loại bỏ các từ xuất hiện trong hơn 50\% tổng số văn bản của tập ngữ liệu (đóng vai trò như bộ lọc stop words tự động).
+    \item \textbf{Tham số \texttt{max\_features}:} Giới hạn số lượng đặc trưng tối đa được chọn vào từ vựng, sắp xếp theo thứ tự giảm dần của tần suất xuất hiện.
+\end{itemize}
+
+\section{Thuật toán Multinomial Naive Bayes}
+\label{sec:multinomial-nb}
+
+\subsection{Định lý Bayes và giả định độc lập có điều kiện}
+Thuật toán Naive Bayes là một mô hình phân loại xác suất dựa trên việc áp dụng Định lý Bayes (Bayes' Theorem). Cho một văn bản được biểu diễn dưới dạng vector đặc trưng $\mathbf{x} = (x_1, x_2, \dots, x_d)$. Theo định lý Bayes, xác suất hậu nghiệm (Posterior Probability) để mẫu $\mathbf{x}$ thuộc về lớp $y \in \{0, 1\}$ được tính theo công thức:
+\begin{equation}
+P(y | \mathbf{x}) = \frac{P(y) P(\mathbf{x} | y)}{P(\mathbf{x})} = \frac{P(y) P(x_1, x_2, \dots, x_d | y)}{\sum_{y'} P(y') P(\mathbf{x} | y')}
+\end{equation}
+trong đó:
+\begin{itemize}
+    \item $P(y)$ là xác suất tiền định (Prior Probability) của lớp $y$.
+    \item $P(\mathbf{x} | y)$ là hàm khả năng (Likelihood) sinh ra vector $\mathbf{x}$ khi biết trước lớp $y$.
+    \item $P(\mathbf{x})$ là hằng số chuẩn hóa độc lập với lớp $y$.
+\end{itemize}
+
+Để giải quyết bài toán tính toán phân phối đồng thời phức tạp $P(x_1, x_2, \dots, x_d | y)$, thuật toán đưa ra \textbf{Giả định ngây thơ (Naive Conditional Independence Assumption)}: Mọi đặc trưng $x_i$ đều độc lập có điều kiện với nhau khi biết trước nhãn lớp $y$:
+\begin{equation}
+P(\mathbf{x} | y) = \prod_{i=1}^d P(x_i | y)
+\end{equation}
+
+Từ giả định này, quy tắc ra quyết định Bayes (Maximum A Posteriori --- MAP) để tìm lớp dự đoán $\hat{y}$ trở thành:
+\begin{equation}
+\hat{y} = \arg\max_{y \in \{0, 1\}} P(y | \mathbf{x}) = \arg\max_{y \in \{0, 1\}} \left[ P(y) \prod_{i=1}^d P(x_i | y) \right]
+\end{equation}
+Chuyển sang miền Log-space để tránh hiện tượng tràn số dưới (Arithmetic Underflow) khi nhân liên tiếp nhiều xác suất nhỏ:
+\begin{equation}
+\hat{y} = \arg\max_{y \in \{0, 1\}} \left[ \ln P(y) + \sum_{i=1}^d \ln P(x_i | y) \right]
+\end{equation}
+
+\subsection{Biến thể Multinomial Naive Bayes và kỹ thuật làm trơn Laplace}
+Đối với dữ liệu văn bản được biểu diễn dưới dạng tần số đếm hoặc vector TF-IDF, biến thể \textbf{Multinomial Naive Bayes (MNB)} mô hình hóa quá trình sinh văn bản theo phân phối đa thức.
+Xác suất khả năng sinh ra từ vựng $w_i$ khi biết trước nhãn $y$ được ước lượng bằng tỷ lệ số lần từ $w_i$ xuất hiện trong các văn bản thuộc lớp $y$ so với tổng số lượng từ của toàn bộ lớp $y$:
+\begin{equation}
+P(w_i | y) = \frac{N_{yi}}{N_y}
+\end{equation}
+trong đó $N_{yi}$ là tổng số lần từ $w_i$ xuất hiện trong lớp $y$, và $N_y = \sum_{j=1}^{|\mathcal{V}|} N_{yj}$ là tổng số từ xuất hiện trong lớp $y$.
+
+\textbf{Vấn đề xác suất bằng 0 (Zero-Frequency Problem):} Nếu một từ $w_i$ chưa từng xuất hiện trong tập huấn luyện của lớp $y$, thì $N_{yi} = 0$, dẫn tới $P(w_i | y) = 0$. Khi tính tích xác suất cho toàn bộ câu, sự xuất hiện của từ mới này sẽ lập tức kéo toàn bộ tích xác suất về $0$, xóa sạch hoàn toàn mọi bằng chứng của các từ khóa khác trong câu!
+
+Để khắc phục hiện tượng nguy hiểm này, kỹ thuật \textbf{Làm trơn Laplace (Laplace/Lidstone Smoothing)} được áp dụng thông qua việc cộng thêm một hằng số làm trơn $\alpha > 0$ vào tử số và $\alpha \times |\mathcal{V}|$ vào mẫu số:
+\begin{equation}
+\label{eq:laplace-smoothing}
+\hat{P}(w_i | y) = \frac{N_{yi} + \alpha}{N_y + \alpha |\mathcal{V}|}
+\end{equation}
+trong đó:
+\begin{itemize}
+    \item Khi $\alpha = 1$, phép làm trơn được gọi là Làm trơn Laplace chuẩn (Add-1 smoothing);
+    \item Khi $0 < \alpha < 1$ hoặc $\alpha > 1$, phép làm trơn được gọi là Làm trơn Lidstone.
+    \item $|\mathcal{V}|$ là tổng kích thước của không gian từ vựng.
+\end{itemize}
+
+\subsection{Cơ chế phân tích trọng số từ qua Log-Odds Ratio}
+Một ưu điểm vượt trội của mô hình Multinomial Naive Bayes là khả năng diễn giải rất sáng tỏ. Để định lượng mức độ một từ $w_i$ có xu hướng đẩy dự đoán về phía tin nhắn rác (\texttt{spam}) hay tin nhắn hợp lệ (\texttt{ham}), ta có thể tính tỷ số logarit cơ số tự nhiên giữa hai khả năng (Log-Odds Ratio):
+\begin{equation}
+\label{eq:log-odds}
+\text{Log-Odds}(w_i) = \ln \hat{P}(w_i | y=1) - \ln \hat{P}(w_i | y=0)
+\end{equation}
+Nếu $\text{Log-Odds}(w_i) > 0$, sự xuất hiện của từ $w_i$ sẽ làm tăng xác suất dự đoán là spam. Giá trị này càng lớn, từ $w_i$ càng là tín hiệu đặc trưng cực mạnh của tin nhắn rác. Ngược lại, nếu $\text{Log-Odds}(w_i) < 0$, từ vựng sẽ kéo dự đoán về phía tin nhắn hợp lệ.
+
+\section{Thuật toán K-Láng giềng gần nhất (K-Nearest Neighbors)}
+\label{sec:knn-ly-thuyet}
+
+\subsection{Nguyên lý phân loại dựa trên không gian hình học}
+Thuật toán K-NN là một thuật toán học lười (Lazy Learning / Instance-based Learning). Mô hình không trải qua quá trình tối ưu hóa trọng số tường minh trong giai đoạn huấn luyện, mà lưu trữ toàn bộ tập dữ liệu huấn luyện $\mathcal{D}_{\text{train}} = \{(\mathbf{x}_i, y_i)\}_{i=1}^N$ vào bộ nhớ. Khi có một mẫu mới $\mathbf{x}_{\text{test}}$ cần dự đoán, thuật toán tiến hành đo khoảng cách từ $\mathbf{x}_{\text{test}}$ tới mọi điểm dữ liệu trong tập huấn luyện, lựa chọn ra $K$ điểm có khoảng cách gần nhất, và ra quyết định dựa trên cơ chế biểu quyết (Voting).
+
+\subsection{Các độ đo khoảng cách và vấn đề “Khoảng cách công bằng”}
+Hiệu năng của thuật toán K-NN phụ thuộc hoàn toàn vào hàm khoảng cách (Distance Metric) được lựa chọn trên không gian đặc trưng.
+\begin{enumerate}
+    \item \textbf{Khoảng cách Euclid (Euclidean Distance):}
+    Khoảng cách hình học thông thường giữa hai vector $\mathbf{u}, \mathbf{v} \in \mathbb{R}^d$:
+    \begin{equation}
+    d_{\text{Euclid}}(\mathbf{u}, \mathbf{v}) = \|\mathbf{u} - \mathbf{v}\|_2 = \sqrt{\sum_{j=1}^d (u_j - v_j)^2}
+    \end{equation}
+    \item \textbf{Khoảng cách Cosine (Cosine Distance):}
+    Dựa trên góc giữa hai vector trong không gian đa chiều, bất biến đối với độ lớn (Magnitude) của vector:
+    \begin{equation}
+    \text{Sim}_{\text{Cosine}}(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \|\mathbf{v}\|_2} = \frac{\sum_{j=1}^d u_j v_j}{\sqrt{\sum_{j=1}^d u_j^2} \sqrt{\sum_{j=1}^d v_j^2}}
+    \end{equation}
+    \begin{equation}
+    d_{\text{Cosine}}(\mathbf{u}, \mathbf{v}) = 1 - \text{Sim}_{\text{Cosine}}(\mathbf{u}, \mathbf{v})
+    \end{equation}
+\end{enumerate}
+
+\textbf{Nghịch lý khoảng cách Euclid trên dữ liệu văn bản thưa:}
+Trong Bài giảng số 3 của học phần, giảng viên đã nhấn mạnh vấn đề: *“Khoảng cách có công bằng không?”*. Trong bài toán phân loại văn bản biểu diễn bằng BoW (vector đếm):
+\begin{itemize}
+    \item Xét hai tin nhắn hợp lệ: một tin nhắn rất ngắn (ví dụ: *“Call me”* --- 2 từ) và một tin nhắn dài (ví dụ: *“Call me when you get home, I will be at the library studying”* --- 13 từ). Mặc dù cùng là tin nhắn gia đình hợp lệ, nhưng do độ dài khác nhau, vector đếm của chúng có độ lớn cách xa nhau, khiến khoảng cách Euclid $d_{\text{Euclid}}$ giữa chúng rất lớn.
+    \item Ngược lại, một tin nhắn spam ngắn (ví dụ: *“Call 09061”*) lại có độ lớn vector gần với tin nhắn ngắn hợp lệ hơn!
+    \item Do đó, khoảng cách Euclid bị chi phối bởi độ dài văn bản thay vì nội dung ngữ nghĩa. Để K-NN hoạt động hiệu quả trên văn bản, bắt buộc phải kết hợp vector hóa TF-IDF chuẩn hóa $L_2$ với \textbf{Độ đo Cosine (Cosine metric)}.
+\end{itemize}
+
+\subsection{Cơ chế biểu quyết và trọng số láng giềng}
+Xác suất dự đoán mẫu thuộc lớp spam $P(y=1 | \mathbf{x})$ trong K-NN được xác định qua $K$ láng giềng gần nhất $\mathcal{N}_K(\mathbf{x})$:
+\begin{itemize}
+    \item \textbf{Biểu quyết đồng đều (\texttt{weights='uniform'}):}
+    \begin{equation}
+    P(y=1 | \mathbf{x}) = \frac{1}{K} \sum_{i \in \mathcal{N}_K(\mathbf{x})} \mathbb{I}(y_i = 1)
+    \end{equation}
+    \item \textbf{Biểu quyết theo trọng số nghịch đảo khoảng cách (\texttt{weights='distance'}):}
+    Các điểm nằm càng gần mẫu thử nghiệm sẽ có tiếng nói càng có trọng lượng trong kết quả biểu quyết:
+    \begin{equation}
+    w_i = \frac{1}{d(\mathbf{x}, \mathbf{x}_i) + \epsilon}
+    \end{equation}
+    \begin{equation}
+    P(y=1 | \mathbf{x}) = \frac{\sum_{i \in \mathcal{N}_K(\mathbf{x})} w_i \mathbb{I}(y_i = 1)}{\sum_{i \in \mathcal{N}_K(\mathbf{x})} w_i}
+    \end{equation}
+\end{itemize}
+
+\section{Thuật toán Cây quyết định (Decision Tree)}
+\label{sec:decision-tree-ly-thuyet}
+
+\subsection{Cấu trúc cây và cơ chế phân tách nút}
+Cây quyết định (Decision Tree) là mô hình học máy phi tham số xây dựng cấu trúc phân cấp dạng cây để phân chia không gian dữ liệu thành các siêu hình hộp chữ nhật đồng nhất.
+Cấu trúc cây gồm:
+\begin{itemize}
+    \item \textbf{Nút gốc (Root Node):} Chứa toàn bộ tập dữ liệu huấn luyện ban đầu.
+    \item \textbf{Các nút quyết định (Decision Nodes):} Áp dụng một điều kiện kiểm tra nhị phân trên một đặc trưng cụ thể (ví dụ: $\text{count}(\text{longnumtoken}) \le 0.5$).
+    \item \textbf{Các nút lá (Leaf Nodes):} Các nút kết thúc không phân chia thêm, gán nhãn dự đoán cho mẫu dữ liệu dựa trên tỷ lệ chiếm ưu thế của các mẫu rơi vào nút đó.
+\end{itemize}
+
+Tại mỗi nút phân chia, thuật toán duyệt qua toàn bộ các đặc trưng và các ngưỡng phân chia có thể để tìm ra phép phân tách dữ liệu tối ưu sao cho độ tinh khiết (Purity) của các tập con thu được là lớn nhất.
+
+\subsection{Các tiêu chí đánh giá độ tinh khiết (Impurity Criteria)}
+\begin{enumerate}
+    \item \textbf{Độ mờ Gini (Gini Impurity):}
+    Đo lường xác suất một mẫu được chọn ngẫu nhiên bị gán nhãn sai nếu được gán nhãn ngẫu nhiên theo phân phối của nút:
+    \begin{equation}
+    \text{Gini}(D) = 1 - \sum_{k=0}^1 p_k^2 = 1 - (p_0^2 + p_1^2)
+    \end{equation}
+    trong đó $p_k$ là tỷ lệ mẫu thuộc lớp $k$ tại nút $D$. Giá trị $\text{Gini} = 0$ khi nút hoàn toàn thuần khiết (chỉ chứa một lớp duy nhất).
+    \item \textbf{Entropy và Độ lợi thông tin (Information Gain):}
+    Dựa trên lý thuyết thông tin Shannon, độ hỗn loạn thông tin Entropy được tính bởi:
+    \begin{equation}
+    H(D) = -\sum_{k=0}^1 p_k \log_2(p_k)
+    \end{equation}
+    Độ lợi thông tin (Information Gain) khi phân chia tập $D$ thành hai tập con $D_{\text{left}}$ và $D_{\text{right}}$ theo thuộc tính $A$ là:
+    \begin{equation}
+    IG(D, A) = H(D) - \left( \frac{|D_{\text{left}}|}{|D|} H(D_{\text{left}}) + \frac{|D_{\text{right}}|}{|D|} H(D_{\text{right}}) \right)
+    \end{equation}
+\end{enumerate}
+
+\subsection{Kiểm soát quá khớp (Overfitting) và Độ quan trọng đặc trưng}
+Trong không gian văn bản có hàng nghìn chiều, Cây quyết định rất dễ bị quá khớp (Overfitting): cây phát triển quá sâu để ghi nhớ từng trường hợp cá biệt của tập huấn luyện, dẫn tới hiệu năng trên tập kiểm thử bị sụt giảm nghiêm trọng.
+Để khắc phục, các siêu tham số chặn sớm (Pre-pruning) được thiết lập:
+\begin{itemize}
+    \item \texttt{max\_depth}: Giới hạn độ sâu tối đa của cây (ví dụ \texttt{max\_depth=10}).
+    \item \texttt{min\_samples\_leaf}: Số lượng mẫu tối thiểu bắt buộc phải có tại một nút lá (tránh tạo ra các nút lá chỉ đại diện cho 1 mẫu cá biệt).
+\end{itemize}
+
+Bên cạnh đó, Cây quyết định cung cấp chỉ số \textbf{Độ quan trọng đặc trưng (Feature Importance)}, được tính bằng tổng mức suy giảm độ mờ Gini (Mean Decrease Impurity) mà đặc trưng đó đóng góp trên toàn bộ các nút phân chia của cây:
+\begin{equation}
+\text{Importance}(f) = \sum_{t \in T, v(t)=f} \frac{N_t}{N} \left( \text{Gini}(t) - \frac{N_{t_L}}{N_t} \text{Gini}(t_L) - \frac{N_{t_R}}{N_t} \text{Gini}(t_R) \right)
+\end{equation}
+
+\section{Hệ thống độ đo đánh giá mô hình phân loại nhị phân}
+\label{sec:do-do-ly-thuyet}
+
+Để đánh giá toàn diện năng lực của các mô hình học máy trên tập dữ liệu mất cân bằng, việc xây dựng một hệ thống độ đo chuẩn xác là điều kiện tiên quyết.
+
+\subsection{Ma trận nhầm lẫn (Confusion Matrix)}
+Ma trận nhầm lẫn tổng hợp kết quả đối sánh giữa nhãn thực tế và nhãn dự đoán trên tập kiểm thử thành bảng 4 ô:
+\begin{table}[H]
+\centering
+\caption{Cấu trúc ma trận nhầm lẫn cho bài toán phân loại nhị phân SMS Spam}
+\label{tab:ly-thuyet-cm}
+\begin{tabular}{|c|c|c|}
+\hline
+\multirow{2}{*}{\textbf{Thực tế (Ground Truth)}} & \multicolumn{2}{c|}{\textbf{Dự đoán (Predicted)}} \\
+\cline{2-3}
+& \textbf{Dự đoán là Ham ($y=0$)} & \textbf{Dự đoán là Spam ($y=1$)} \\
+\hline
+\textbf{Thực tế là Ham ($y=0$)} & \textbf{TN} (True Negative) & \textbf{FP} (False Positive --- Báo nhầm) \\
+\hline
+\textbf{Thực tế là Spam ($y=1$)} & \textbf{FN} (False Negative --- Bỏ sót) & \textbf{TP} (True Positive) \\
+\hline
+\end{tabular}
+\end{table}
+
+Trong bối cảnh thực tiễn của dịch vụ lọc tin nhắn:
+\begin{itemize}
+    \item \textbf{Lỗi Dương tính giả (False Positive --- FP / Type I Error):} Hệ thống dự đoán một tin nhắn bình thường là spam và chặn lại. Đây là lỗi cực kỳ nguy hiểm, có thể làm người dùng bỏ lỡ mã OTP ngân hàng, tin nhắn công việc khẩn cấp hoặc tin tức gia đình.
+    \item \textbf{Lỗi Âm tính giả (False Negative --- FN / Type II Error):} Hệ thống bỏ sót một tin nhắn rác vào hòm thư. Lỗi này gây phiền toái cho người dùng nhưng ít gây ra hậu quả thảm họa như lỗi FP.
+\end{itemize}
+
+\subsection{Độ chính xác (Accuracy)}
+\begin{equation}
+\text{Accuracy} = \frac{\text{TP} + \text{TN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}}
+\end{equation}
+Tỷ lệ dự đoán đúng trên toàn bộ tập dữ liệu. Như đã chứng minh ở Chương 1, độ đo này không phản ánh trung thực hiệu năng khi dữ liệu mất cân bằng.
+
+\subsection{Độ chuẩn xác (Precision)}
+\begin{equation}
+\text{Precision} = \frac{\text{TP}}{\text{TP} + \text{FP}}
+\end{equation}
+Tỷ lệ tin nhắn thực sự là spam trong số tất cả các tin nhắn mà mô hình đã gắn nhãn spam. Precision phản ánh mức độ đáng tin cậy khi mô hình phát chuông báo động spam (tránh báo động giả).
+
+\subsection{Độ bao phủ (Recall / Sensitivity)}
+\begin{equation}
+\text{Recall} = \frac{\text{TP}}{\text{TP} + \text{FN}}
+\end{equation}
+Tỷ lệ tin nhắn rác mà mô hình bắt giữ thành công trên tổng số tin nhắn rác thực tế có trong tập dữ liệu. Recall phản ánh khả năng quét sạch tin rác của bộ lọc (tránh bỏ lọt tội phạm).
+
+\subsection{Điểm số F1 (F1-Score)}
+Precision và Recall thường có mối quan hệ đánh đổi (Trade-off). Điểm F1 là trung bình điều hòa (Harmonic Mean) giữa Precision và Recall, đem lại một thước đo duy nhất cân bằng hoàn hảo giữa hai mục tiêu:
+\begin{equation}
+F_1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2\text{TP}}{2\text{TP} + \text{FP} + \text{FN}}
+\end{equation}
+F1-score chỉ đạt giá trị cao khi cả Precision và Recall đều đồng thời đạt mức tốt.
+
+\subsection{Đường cong ROC và chỉ số AUC}
+Đường cong đặc trưng hoạt động của bộ thu (Receiver Operating Characteristic --- ROC) biểu diễn mối quan hệ phụ thuộc giữa Tỷ lệ Dương tính thật (True Positive Rate --- $\text{TPR} = \text{Recall}$) và Tỷ lệ Dương tính giả (False Positive Rate --- $\text{FPR} = \frac{\text{FP}}{\text{TN} + \text{FP}}$) khi thay đổi liên tục ngưỡng phân loại xác suất $\tau \in [0, 1]$.
+
+Diện tích dưới đường cong ROC (Area Under the Curve --- ROC-AUC) nhận giá trị trong đoạn $[0.5, 1.0]$. Một mô hình đoán ngẫu nhiên có $\text{AUC} = 0.5$, và một mô hình hoàn hảo có $\text{AUC} = 1.0$. Chỉ số AUC phản ánh năng lực xếp hạng xác suất (Ranking capability) tổng thể của mô hình mà không phụ thuộc vào một ngưỡng cắt quyết định đơn lẻ.
+
+\section{Tóm tắt chương 2}
+Chương 2 đã thiết lập hệ thống cơ sở lý thuyết toán học và khoa học dữ liệu hoàn chỉnh cho bài toán phân loại văn bản. Nhóm đã làm sáng tỏ cơ chế hoạt động của mô hình biểu diễn túi từ BoW và trọng số TF-IDF; phân tích nền tảng xác suất của Multinomial Naive Bayes cùng kỹ thuật làm trơn Laplace và tỷ số Log-Odds; phân tích bản chất hình học của K-NN và nguyên nhân bắt buộc phải sử dụng khoảng cách Cosine trên vector TF-IDF; phân tích giải thuật chia nhánh của Cây quyết định với tiêu chí Gini/Entropy; và xây dựng hệ thống độ đo toàn diện với trọng tâm là F1-score và ma trận nhầm lẫn. Toàn bộ nền tảng lý thuyết này sẽ được cụ thể hóa thành kiến trúc hệ thống và quy trình thực nghiệm trong Chương 3.
